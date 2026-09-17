@@ -1,0 +1,4540 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d1730" />
+  <title>Цветные бутылки</title>
+  <style>
+    :root {
+      --bg-1: #07111f;
+      --bg-2: #13213f;
+      --panel: rgba(255,255,255,.09);
+      --panel-strong: rgba(255,255,255,.14);
+      --text: #f7f9ff;
+      --muted: rgba(247,249,255,.66);
+      --accent: #ffd65a;
+      --glass: rgba(226,240,255,.34);
+      --glass-strong: rgba(232,245,255,.76);
+      --shadow: 0 16px 45px rgba(0,0,0,.28);
+      --theme-image: url("assets/themes/night-landscape.webp");
+      --theme-overlay-a: rgba(4,10,22,.32);
+      --theme-overlay-b: rgba(3,8,18,.52);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow-x: hidden;
+      color: var(--text);
+      font-family: Inter, ui-rounded, "SF Pro Rounded", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        linear-gradient(180deg, var(--theme-overlay-a), var(--theme-overlay-b)),
+        var(--theme-image) center / cover no-repeat,
+        radial-gradient(circle at 12% 10%, rgba(75,134,255,.24), transparent 34%),
+        radial-gradient(circle at 86% 18%, rgba(173,73,255,.20), transparent 32%),
+        linear-gradient(155deg, var(--bg-2), var(--bg-1) 68%);
+      user-select: none;
+    }
+
+    button { font: inherit; color: inherit; touch-action: manipulation; }
+    button:focus-visible { outline: 3px solid rgba(126,190,255,.95); outline-offset: 3px; }
+    html, body { overscroll-behavior: none; }
+    .hidden { display: none !important; }
+
+    body[data-theme="meadow"] {
+      --theme-image: url("assets/themes/green-landscape.webp");
+      --theme-overlay-a: rgba(3,15,11,.43);
+      --theme-overlay-b: rgba(2,11,8,.59);
+      --bg-1: #0b241c;
+      --bg-2: #295441;
+      --panel: rgba(239,255,245,.09);
+      --panel-strong: rgba(239,255,245,.14);
+      --accent: #f4d36b;
+    }
+    body[data-theme="sunset"] {
+      --theme-image: url("assets/themes/sunset-landscape.webp");
+      --theme-overlay-a: rgba(24,7,22,.31);
+      --theme-overlay-b: rgba(14,5,19,.52);
+      --bg-1: #241326;
+      --bg-2: #713c52;
+      --panel: rgba(255,240,238,.09);
+      --panel-strong: rgba(255,240,238,.15);
+      --accent: #ffd06f;
+    }
+    body[data-theme="amethyst"] {
+      --theme-image: url("assets/themes/amethyst-landscape.webp");
+      --theme-overlay-a: rgba(18,7,40,.31);
+      --theme-overlay-b: rgba(9,4,25,.53);
+      --bg-1: #160d2d;
+      --bg-2: #4a2f79;
+      --panel: rgba(246,239,255,.09);
+      --panel-strong: rgba(246,239,255,.15);
+      --accent: #f0c9ff;
+    }
+    @media (orientation: portrait) {
+      body { --theme-image: url("assets/themes/night-portrait.webp"); }
+      body[data-theme="meadow"] { --theme-image: url("assets/themes/green-portrait.webp"); }
+      body[data-theme="sunset"] { --theme-image: url("assets/themes/sunset-portrait.webp"); }
+      body[data-theme="amethyst"] { --theme-image: url("assets/themes/amethyst-portrait.webp"); }
+    }
+
+    body[data-glass="gold"] {
+      --glass: rgba(255,224,145,.36);
+      --glass-strong: rgba(255,232,171,.82);
+    }
+    body[data-glass="rose"] {
+      --glass: rgba(255,194,221,.34);
+      --glass-strong: rgba(255,213,232,.80);
+    }
+    body[data-glass="mint"] {
+      --glass: rgba(191,255,231,.34);
+      --glass-strong: rgba(210,255,239,.82);
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+    }
+
+    .screen {
+      width: min(960px, 100%);
+      min-height: calc(100dvh - 36px);
+      border: 1px solid rgba(255,255,255,.11);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.035));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(22px);
+      border-radius: 32px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .screen::before {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      right: -110px;
+      bottom: -110px;
+      border-radius: 50%;
+      background: rgba(98,138,255,.12);
+      filter: blur(3px);
+      pointer-events: none;
+    }
+
+    /* ГЛАВНЫЙ ЭКРАН */
+    .menu-screen {
+      min-height: inherit;
+      display: grid;
+      align-items: center;
+      grid-template-columns: minmax(0, 1.03fr) minmax(300px, .97fr);
+      gap: clamp(28px, 5vw, 64px);
+      padding: clamp(42px, 6vw, 72px);
+      position: relative;
+      isolation: isolate;
+    }
+
+    .menu-screen::after {
+      content: "";
+      position: absolute;
+      width: 430px;
+      height: 430px;
+      right: -75px;
+      top: 50%;
+      transform: translateY(-48%);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(106,168,255,.14), rgba(181,124,255,.055) 46%, transparent 70%);
+      filter: blur(3px);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .menu-copy {
+      position: relative;
+      z-index: 2;
+      max-width: 540px;
+    }
+
+    h1 {
+      font-size: clamp(52px, 7.2vw, 82px);
+      line-height: .88;
+      margin: 0 0 24px;
+      letter-spacing: -.06em;
+      text-wrap: balance;
+      text-shadow: 0 14px 36px rgba(0,0,0,.18);
+    }
+
+    .menu-copy p {
+      max-width: 470px;
+      margin: 0 0 32px;
+      font-size: clamp(17px, 2vw, 20px);
+      line-height: 1.55;
+      color: rgba(247,249,255,.70);
+    }
+
+    .menu-audio {
+      position: absolute;
+      top: 22px;
+      right: 22px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 8;
+    }
+
+    .menu-audio-btn {
+      width: 44px;
+      height: 44px;
+      border: 1px solid rgba(255,255,255,.11);
+      border-radius: 14px;
+      background: rgba(255,255,255,.075);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 18px;
+      box-shadow: inset 0 1px rgba(255,255,255,.06), 0 9px 22px rgba(0,0,0,.12);
+      transition: transform .16s ease, background .16s ease, border-color .16s ease, opacity .16s ease;
+    }
+    .menu-audio-btn:hover { transform: translateY(-2px); background: rgba(255,255,255,.12); }
+    .menu-audio-btn.off { opacity: .55; }
+
+    .hero-scene {
+      min-height: 430px;
+      position: relative;
+      display: grid;
+      place-items: center;
+      z-index: 1;
+    }
+    .hero-scene::before {
+      content: "";
+      position: absolute;
+      width: min(360px, 88%);
+      height: 92px;
+      bottom: 36px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(72,123,205,.22), rgba(22,38,70,.04) 68%, transparent 72%);
+      filter: blur(5px);
+      transform: perspective(260px) rotateX(58deg);
+    }
+    .hero-spark {
+      position: absolute;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(255,223,119,.82);
+      box-shadow: 0 0 14px rgba(255,223,119,.52);
+      opacity: .72;
+      animation: heroSpark 3.6s ease-in-out infinite alternate;
+    }
+    .hero-spark.s1 { left: 15%; top: 25%; }
+    .hero-spark.s2 { right: 14%; top: 36%; animation-delay: -1.1s; transform: scale(.7); }
+    .hero-spark.s3 { right: 28%; bottom: 20%; animation-delay: -2.2s; transform: scale(.55); }
+    @keyframes heroSpark {
+      from { opacity: .28; translate: 0 7px; }
+      to { opacity: .9; translate: 0 -7px; }
+    }
+
+    .primary-btn, .small-btn, .icon-btn {
+      border: 0;
+      cursor: pointer;
+      transition: transform .16s ease, filter .16s ease, background .16s ease, opacity .16s ease;
+    }
+
+    .primary-btn {
+      padding: 15px 22px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #ffe078, #ffc928);
+      color: #3b2b00;
+      font-weight: 800;
+      box-shadow: 0 12px 26px rgba(255,197,36,.22);
+      min-width: 170px;
+    }
+
+    .primary-btn:hover { transform: translateY(-2px); filter: brightness(1.04); }
+    .primary-btn:active { transform: translateY(0) scale(.98); }
+
+    .menu-meta {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .menu-meta span {
+      padding: 8px 11px;
+      border-radius: 11px;
+      background: rgba(255,255,255,.055);
+    }
+
+    .hero-bottles {
+      min-height: 390px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 20px;
+      perspective: 800px;
+      position: relative;
+      z-index: 2;
+      filter: drop-shadow(0 24px 24px rgba(0,0,0,.18));
+    }
+
+    .hero-bottle {
+      width: 68px;
+      height: 250px;
+      border: 4px solid rgba(232,245,255,.65);
+      border-top: 0;
+      border-radius: 0 0 22px 22px;
+      position: relative;
+      overflow: hidden;
+      background: rgba(255,255,255,.025);
+      box-shadow: inset 12px 0 18px rgba(255,255,255,.035), 0 18px 28px rgba(0,0,0,.14);
+      transform: rotate(var(--r, 0deg)) translateY(var(--y, 0px));
+    }
+
+    .hero-bottle::before {
+      content: "";
+      position: absolute;
+      width: 34px;
+      height: 30px;
+      left: 13px;
+      top: -26px;
+      border-left: 4px solid rgba(232,245,255,.65);
+      border-right: 4px solid rgba(232,245,255,.65);
+    }
+
+    .hero-layer { position: absolute; left: 3px; right: 3px; height: 24%; border-radius: 6px 6px 3px 3px; }
+
+    /* GAME */
+    .game-screen {
+      min-height: inherit;
+      display: flex;
+      flex-direction: column;
+      padding: 22px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+      z-index: 3;
+    }
+
+    .top-left, .top-right { display: flex; gap: 9px; align-items: center; }
+    .top-right { justify-content: flex-end; }
+
+    .icon-btn {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.085);
+      border: 1px solid rgba(255,255,255,.10);
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+      box-shadow: inset 0 1px rgba(255,255,255,.06);
+    }
+    .icon-btn:hover { background: rgba(255,255,255,.14); transform: translateY(-1px); }
+    .icon-btn:disabled { opacity: .35; cursor: default; transform: none; }
+
+    .level-card { text-align: center; min-width: 150px; }
+    .level-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .12em; }
+    .level-number { font-weight: 900; font-size: 22px; margin-top: 2px; }
+
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 20px;
+      position: relative;
+      z-index: 2;
+    }
+    .stat {
+      min-width: 96px;
+      text-align: center;
+      padding: 9px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.055);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .stat strong { display: block; color: var(--text); font-size: 18px; margin-top: 1px; }
+
+    .board-wrap {
+      flex: 1;
+      display: grid;
+      place-items: center;
+      min-height: 450px;
+      padding: 32px 8px 22px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .board {
+      width: min(790px, 100%);
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: clamp(20px, 4vw, 40px) clamp(18px, 4vw, 38px);
+    }
+
+    .bottle-slot {
+      width: 76px;
+      height: 242px;
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: inherit;
+      appearance: none;
+      -webkit-appearance: none;
+      align-items: flex-end;
+      justify-content: center;
+      transform-origin: 50% 88%;
+      transition: transform .22s ease, filter .22s ease, opacity .22s ease;
+      will-change: transform;
+    }
+
+    .bottle-slot:hover:not(:disabled) { transform: translateY(-4px); }
+    .bottle-slot:active:not(:disabled) { transform: translateY(-1px) scale(.985); }
+    .bottle-slot:focus-visible { outline: 3px solid rgba(126,190,255,.95); outline-offset: 5px; border-radius: 18px; }
+    .bottle-slot.selected { transform: translateY(-20px); filter: drop-shadow(0 12px 16px rgba(255,214,90,.16)); }
+    .bottle-slot.locked,
+    .bottle-slot:disabled { cursor: default; }
+    .bottle-slot.locked:hover,
+    .bottle-slot:disabled:hover { transform: none; }
+
+    .bottle-neck {
+      position: absolute;
+      top: 0;
+      width: 42px;
+      height: 37px;
+      border-left: 4px solid var(--glass-strong);
+      border-right: 4px solid var(--glass-strong);
+      background: rgba(255,255,255,.02);
+      z-index: 4;
+    }
+    .bottle-neck::before {
+      content: "";
+      position: absolute;
+      left: -7px;
+      right: -7px;
+      top: 0;
+      height: 8px;
+      border: 3px solid var(--glass-strong);
+      border-radius: 6px;
+      background: rgba(255,255,255,.04);
+    }
+
+    .bottle-body {
+      width: 70px;
+      height: 212px;
+      position: relative;
+      overflow: hidden;
+      border: 4px solid var(--glass-strong);
+      border-top-width: 3px;
+      border-radius: 12px 12px 23px 23px;
+      background: linear-gradient(90deg, rgba(255,255,255,.035), rgba(255,255,255,.005) 45%, rgba(255,255,255,.045));
+      box-shadow: inset 7px 0 10px rgba(255,255,255,.04), 0 14px 22px rgba(0,0,0,.14);
+    }
+
+    .bottle-body::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 13px;
+      bottom: 23px;
+      width: 4px;
+      border-radius: 9px;
+      background: linear-gradient(180deg, rgba(255,255,255,.33), rgba(255,255,255,0));
+      z-index: 8;
+      pointer-events: none;
+    }
+
+    /*
+      Жидкость — единая непрерывная масса. Цветовые слои не являются
+      отдельными "капсулами": они соприкасаются без зазоров и скруглений.
+      Форму жидкости задаёт только стекло бутылки.
+    */
+    .liquid-layer {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: calc(25% + 1px);
+      bottom: calc(var(--index) * 25%);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0) 22%, rgba(0,0,0,.055) 100%),
+        var(--color);
+      border-radius: 0;
+      box-shadow: none;
+      transition: transform .2s ease, opacity .2s ease;
+    }
+
+    /* Единственная свободная поверхность жидкости находится только сверху. */
+    .liquid-layer.top-liquid {
+      z-index: 2;
+    }
+    .liquid-layer.top-liquid::before {
+      content: "";
+      position: absolute;
+      left: -5%;
+      width: 110%;
+      top: -3px;
+      height: 7px;
+      border-radius: 50%;
+      background: linear-gradient(90deg, rgba(255,255,255,.10), rgba(255,255,255,.36) 46%, rgba(255,255,255,.12));
+      opacity: .82;
+      transform-origin: center;
+      animation: liquidSurfaceIdle 2.8s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes liquidSurfaceIdle {
+      from { transform: translateX(-1.2%) scaleX(.985); opacity: .68; }
+      to   { transform: translateX(1.2%) scaleX(1.015); opacity: .88; }
+    }
+
+    .bottle-complete .bottle-body {
+      box-shadow: inset 7px 0 10px rgba(255,255,255,.05), 0 0 25px rgba(255,255,255,.09), 0 14px 22px rgba(0,0,0,.14);
+    }
+    .bottle-complete::after {
+      content: "";
+      position: absolute;
+      right: -3px;
+      top: 25px;
+      width: 24px;
+      height: 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #e8fff1;
+      color: #168548;
+      font-size: 14px;
+      font-weight: 900;
+      z-index: 9;
+      box-shadow: 0 5px 12px rgba(0,0,0,.18);
+    }
+
+    .pour-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 55;
+      pointer-events: none;
+    }
+    .pour-canvas.stream-layer { z-index: 65; }
+
+    .animation-glass {
+      position: fixed !important;
+      margin: 0 !important;
+      z-index: 60 !important;
+      pointer-events: none !important;
+      cursor: default !important;
+      transition: none !important;
+      filter: drop-shadow(0 18px 22px rgba(0,0,0,.22));
+      will-change: left, top, transform;
+    }
+    .animation-glass:hover { transform: none; }
+    .animation-glass *,
+    .animation-glass *::before,
+    .animation-glass *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      50% { transform: translateX(6px); }
+      75% { transform: translateX(-3px); }
+    }
+    .shake { animation: shake .3s ease; }
+
+    .hint {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      min-height: 20px;
+      padding: 0 12px 4px;
+    }
+
+
+    /* META / ECONOMY / POWER-UPS */
+    .coin-stat strong { color: #ffe279; }
+
+    .powerbar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 4px auto 0;
+      position: relative;
+      z-index: 4;
+    }
+
+    .power-btn {
+      min-width: 156px;
+      border: 1px solid rgba(255,255,255,.11);
+      border-radius: 15px;
+      background: rgba(255,255,255,.075);
+      color: var(--text);
+      padding: 10px 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 800;
+      transition: transform .16s ease, background .16s ease, opacity .16s ease, border-color .16s ease;
+      box-shadow: inset 0 1px rgba(255,255,255,.055);
+    }
+    .power-btn:hover { transform: translateY(-2px); background: rgba(255,255,255,.12); }
+    .power-btn:active { transform: translateY(0) scale(.98); }
+    .power-btn:disabled { opacity: .4; cursor: default; transform: none; }
+    .power-btn .cost {
+      padding: 4px 7px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.16);
+      color: #ffe279;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .power-btn.rewarded .cost { color: #d8e7ff; }
+
+    .bottle-slot.hint-source,
+    .bottle-slot.hint-target { z-index: 12; }
+    .bottle-slot.hint-source { animation: hintSourcePulse .95s ease-in-out infinite; }
+    .bottle-slot.hint-target { animation: hintTargetPulse .95s .12s ease-in-out infinite; }
+    .bottle-slot.hint-source::before,
+    .bottle-slot.hint-target::before {
+      position: absolute;
+      top: -17px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 27px;
+      height: 27px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      font-size: 13px;
+      font-weight: 900;
+      z-index: 20;
+      box-shadow: 0 6px 15px rgba(0,0,0,.24);
+    }
+    .bottle-slot.hint-source::before { content: "1"; background: #ffe279; color: #392c00; }
+    .bottle-slot.hint-target::before { content: "2"; background: #dff7ff; color: #123247; }
+    @keyframes hintSourcePulse {
+      0%,100% { transform: translateY(-6px) scale(1); filter: drop-shadow(0 0 8px rgba(255,226,121,.28)); }
+      50% { transform: translateY(-15px) scale(1.045); filter: drop-shadow(0 0 20px rgba(255,226,121,.65)); }
+    }
+    @keyframes hintTargetPulse {
+      0%,100% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 7px rgba(160,226,255,.25)); }
+      50% { transform: translateY(-7px) scale(1.04); filter: drop-shadow(0 0 20px rgba(160,226,255,.62)); }
+    }
+
+    .win-reward {
+      margin: -10px auto 20px;
+      width: fit-content;
+      padding: 9px 13px;
+      border-radius: 999px;
+      background: rgba(255,213,78,.12);
+      border: 1px solid rgba(255,222,112,.20);
+      color: #ffe279;
+      font-weight: 900;
+    }
+    .win-card.win-pop { animation: winCardPop .5s cubic-bezier(.2,.9,.25,1.15); }
+    @keyframes winCardPop {
+      0% { transform: translateY(18px) scale(.90); opacity: 0; }
+      70% { transform: translateY(-4px) scale(1.025); opacity: 1; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    .win-fx-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 96;
+      pointer-events: none;
+    }
+
+    /* MODAL */
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(3,8,18,.58);
+      backdrop-filter: blur(9px);
+    }
+    .win-card {
+      width: min(420px, 100%);
+      text-align: center;
+      padding: 32px;
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(31,47,82,.97), rgba(13,24,45,.98));
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 26px 70px rgba(0,0,0,.40);
+    }
+    .win-icon { font-size: 56px; filter: drop-shadow(0 8px 10px rgba(0,0,0,.18)); }
+    .win-card h2 { font-size: 34px; margin: 8px 0 8px; }
+    .win-card p { color: var(--muted); margin: 0 0 24px; line-height: 1.5; }
+    .win-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .small-btn {
+      padding: 13px 16px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.09);
+      border: 1px solid rgba(255,255,255,.10);
+      font-weight: 700;
+    }
+    .small-btn:hover { background: rgba(255,255,255,.14); transform: translateY(-1px); }
+    .small-btn.primary { background: var(--accent); color: #3b2b00; border-color: transparent; }
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      bottom: 22px;
+      transform: translate(-50%, 18px);
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(7,14,29,.92);
+      border: 1px solid rgba(255,255,255,.10);
+      color: #fff;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: .22s ease;
+      z-index: 120;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+
+    /* NAVIGATION / LEVEL SELECT / SHOP */
+    .menu-actions {
+      width: min(470px, 100%);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 11px;
+    }
+    .menu-actions .primary-btn {
+      grid-column: 1 / -1;
+      min-height: 58px;
+      border-radius: 18px;
+      font-size: 17px;
+      box-shadow: 0 14px 32px rgba(255,201,40,.20), inset 0 1px rgba(255,255,255,.36);
+    }
+    .secondary-btn {
+      min-height: 51px;
+      padding: 13px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.055));
+      color: var(--text);
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .16s ease, background .16s ease, border-color .16s ease;
+      box-shadow: inset 0 1px rgba(255,255,255,.055);
+    }
+    .secondary-btn:hover { transform: translateY(-2px); background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.18); }
+    .secondary-btn:active { transform: translateY(0) scale(.98); }
+    .coin-inline { color: #ffe279; font-weight: 900; white-space: nowrap; }
+
+    .meta-screen {
+      min-height: inherit;
+      height: calc(100dvh - 36px);
+      display: flex;
+      flex-direction: column;
+      padding: 22px;
+      position: relative;
+      z-index: 2;
+    }
+    .meta-topbar {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 14px;
+      flex: 0 0 auto;
+    }
+    .meta-heading { min-width: 0; }
+    .meta-title { font-size: clamp(22px, 4vw, 30px); font-weight: 900; letter-spacing: -.025em; }
+    .meta-subtitle { margin-top: 3px; color: var(--muted); font-size: 13px; }
+    .coin-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 88px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255,211,78,.10);
+      border: 1px solid rgba(255,222,112,.18);
+      color: #ffe279;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .progress-track {
+      height: 9px;
+      margin: 18px 2px 16px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.07);
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #55d98b, #ffd15c);
+      transition: width .35s ease;
+    }
+    .level-grid {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      display: grid;
+      grid-template-columns: repeat(10, minmax(56px, 1fr));
+      align-content: start;
+      gap: 9px;
+      padding: 3px 5px 13px 2px;
+      scrollbar-width: thin;
+    }
+    .level-tile {
+      min-height: 68px;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 16px;
+      background: rgba(255,255,255,.065);
+      color: var(--text);
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    }
+    .level-tile:hover:not(:disabled) { transform: translateY(-2px); background: rgba(255,255,255,.11); }
+    .level-tile.current { border-color: rgba(255,214,90,.7); box-shadow: 0 0 0 2px rgba(255,214,90,.09) inset; }
+    .level-tile.completed { background: rgba(85,217,139,.105); border-color: rgba(85,217,139,.25); }
+    .level-tile:disabled { opacity: .37; cursor: default; }
+    .level-tile .level-index { font-size: 18px; font-weight: 900; }
+    .level-tile .level-detail { min-height: 14px; font-size: 10px; color: var(--muted); }
+    .level-tile.completed .level-detail { color: #8df0b4; }
+    .level-lock { position: absolute; right: 7px; top: 6px; font-size: 10px; opacity: .7; }
+    .meta-footer {
+      flex: 0 0 auto;
+      margin-top: 9px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .shop-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 8px 4px 18px 1px;
+      scrollbar-width: thin;
+    }
+    .economy-card {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 16px;
+      margin: 8px 0 20px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,221,111,.16);
+      background: rgba(255,211,78,.075);
+    }
+    .economy-icon { font-size: 28px; }
+    .economy-card strong { display: block; color: #ffe279; margin-bottom: 3px; }
+    .economy-card span { color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .shop-section { margin-bottom: 24px; }
+    .shop-section-head { display: flex; align-items: end; justify-content: space-between; gap: 14px; margin-bottom: 11px; }
+    .shop-section h3 { margin: 0; font-size: 19px; }
+    .shop-section-head span { color: var(--muted); font-size: 11px; }
+    .shop-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 11px; }
+    .shop-card {
+      min-width: 0;
+      padding: 11px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.055);
+    }
+    .shop-preview {
+      height: 78px;
+      border-radius: 13px;
+      border: 1px solid rgba(255,255,255,.10);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .shop-preview::after {
+      content: "";
+      position: absolute;
+      inset: 10px 35% 8px;
+      border: 3px solid var(--preview-glass, rgba(232,245,255,.78));
+      border-top-width: 2px;
+      border-radius: 7px 7px 13px 13px;
+      box-shadow: inset 5px 0 8px rgba(255,255,255,.05);
+    }
+    .shop-name { font-weight: 900; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .shop-desc { min-height: 31px; color: var(--muted); font-size: 10px; line-height: 1.4; margin: 3px 0 9px; }
+    .shop-buy {
+      width: 100%;
+      border: 0;
+      border-radius: 11px;
+      padding: 9px 8px;
+      background: rgba(255,255,255,.09);
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .coin-art {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+      flex: 0 0 auto;
+      vertical-align: -.18em;
+      filter: drop-shadow(0 1px 1px rgba(71,43,0,.24));
+      pointer-events: none;
+    }
+    .shop-buy.buyable .coin-art { width: 17px; height: 17px; }
+    .coin-pill .coin-art, .coin-stat .coin-art, .coin-inline .coin-art { width: 17px; height: 17px; }
+    .cost .coin-art { width: 15px; height: 15px; }
+    .win-reward .coin-art { width: 22px; height: 22px; }
+    .economy-icon .coin-art { width: 32px; height: 32px; filter: drop-shadow(0 4px 8px rgba(255,194,32,.22)); }
+    .shop-buy.buyable { background: #ffd65a; color: #3b2b00; }
+    .shop-buy.equipped { background: rgba(85,217,139,.14); color: #9bf4bd; cursor: default; }
+    .shop-note {
+      margin-top: 5px;
+      color: rgba(247,249,255,.48);
+      font-size: 11px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    /* R7 — consolidated responsive hardening for VK webviews. */
+    .menu-screen,
+    .meta-screen,
+    .game-screen,
+    .topbar,
+    .board-wrap,
+    .board,
+    .level-grid,
+    .shop-scroll { min-width: 0; }
+
+    .toast {
+      max-width: calc(100% - 24px);
+      white-space: normal;
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 760px) {
+      .app-shell {
+        width: 100%;
+        height: 100dvh;
+        min-height: 100dvh;
+        padding:
+          max(8px, env(safe-area-inset-top))
+          max(8px, env(safe-area-inset-right))
+          max(8px, env(safe-area-inset-bottom))
+          max(8px, env(safe-area-inset-left));
+      }
+      .screen {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        border-radius: 20px;
+      }
+
+      .menu-screen,
+      .meta-screen,
+      .game-screen { height: 100%; min-height: 0; }
+
+      .menu-screen {
+        grid-template-columns: 1fr;
+        text-align: center;
+        padding: 76px 22px 30px;
+        gap: 8px;
+      }
+      .menu-copy { max-width: none; }
+      .menu-copy p { margin-left: auto; margin-right: auto; margin-bottom: 24px; }
+      .menu-actions { margin: 0 auto; justify-content: center; }
+      .menu-audio { top: 16px; right: 16px; }
+      .hero-scene { min-height: 250px; order: -1; margin: -18px 0; }
+      .hero-bottles { min-height: 285px; transform: scale(.76); }
+      .hero-scene::before { bottom: 20px; }
+
+      .game-screen { padding: 10px 8px 8px; overflow: hidden; }
+      .topbar { grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 6px; }
+      .top-left, .top-right { gap: 4px; min-width: 0; }
+      .top-left .icon-btn, .top-right .icon-btn {
+        width: 36px;
+        height: 36px;
+        flex: 0 0 36px;
+        border-radius: 11px;
+        font-size: 16px;
+      }
+      .level-card { min-width: 74px; }
+      .level-label { font-size: 10px; }
+      .level-number { font-size: 18px; }
+
+      .stats { gap: 6px; margin-top: 8px; }
+      .stat {
+        min-width: 0;
+        flex: 1 1 0;
+        padding: 5px 6px;
+        border-radius: 11px;
+        font-size: 10px;
+      }
+      .stat strong { font-size: 15px; }
+
+      .powerbar {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        margin-top: 5px;
+      }
+      .power-btn {
+        min-width: 0;
+        min-height: 42px;
+        padding: 6px;
+        border-radius: 12px;
+        gap: 3px;
+        flex-direction: column;
+        font-size: 11px;
+        line-height: 1.12;
+      }
+      .power-btn > span:first-child { white-space: normal; text-align: center; }
+      .power-btn .cost { padding: 2px 5px; font-size: 9px; }
+
+      .board-wrap { min-height: 0; padding: 6px 0 3px; overflow: visible; }
+      .board { width: 100%; max-width: 360px; row-gap: 10px; column-gap: 9px; }
+      .bottle-slot { width: 58px; height: 190px; }
+      .bottle-body {
+        width: 54px;
+        height: 165px;
+        border-width: 3px;
+        border-top-width: 2px;
+        border-radius: 10px 10px 18px 18px;
+      }
+      .bottle-neck {
+        width: 34px;
+        height: 30px;
+        border-left-width: 3px;
+        border-right-width: 3px;
+      }
+      .bottle-neck::before { border-width: 2px; }
+      .bottle-slot.selected { transform: translateY(-14px); }
+      .hint { min-height: 18px; padding: 1px 6px 0; font-size: 11px; line-height: 1.25; }
+
+      .meta-screen { padding: 12px 10px 10px; }
+      .meta-topbar { gap: 9px; }
+      .coin-pill { min-width: 80px; padding: 9px; font-size: 13px; }
+      .progress-track { margin: 12px 2px 10px; }
+      .level-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 7px;
+        padding-right: 2px;
+      }
+      .level-tile { min-height: 58px; border-radius: 13px; }
+      .level-tile .level-index { font-size: 16px; }
+      .level-tile .level-detail { font-size: 9px; }
+      .level-lock { right: 5px; top: 4px; font-size: 9px; }
+      .meta-footer { margin-top: 6px; font-size: 10px; line-height: 1.3; }
+
+      .shop-scroll { padding: 7px 2px 12px; }
+      .shop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .economy-card { padding: 11px 12px; margin: 7px 0 14px; }
+      .shop-card { padding: 9px; border-radius: 14px; }
+      .shop-preview { height: 68px; margin-bottom: 8px; }
+      .shop-section { margin-bottom: 18px; }
+      .shop-section-head { margin-bottom: 8px; }
+
+      .modal-backdrop { padding: 14px; }
+      .win-card { width: min(390px, 100%); padding: 24px 18px; border-radius: 22px; }
+      .win-icon { font-size: 46px; }
+      .win-card h2 { font-size: 28px; }
+      .win-card p { margin-bottom: 18px; }
+    }
+
+    @media (max-width: 470px) {
+      .menu-actions { grid-template-columns: 1fr; }
+      .menu-actions .primary-btn { grid-column: auto; }
+      .menu-screen { padding-left: 16px; padding-right: 16px; }
+      h1 { font-size: clamp(48px, 15vw, 66px); }
+      .menu-audio-btn { width: 41px; height: 41px; }
+    }
+
+    /* Most levels contain nine bottles. Five columns keep the board stable on phones. */
+    @media (max-width: 420px) {
+      .board { max-width: 300px; column-gap: 8px; row-gap: 9px; }
+      .bottle-slot { width: 48px; height: 158px; }
+      .bottle-body {
+        width: 45px;
+        height: 136px;
+        border-radius: 9px 9px 15px 15px;
+      }
+      .bottle-neck { width: 29px; height: 26px; }
+      .bottle-neck::before { left: -6px; right: -6px; height: 7px; }
+      .bottle-body::after { left: 6px; top: 10px; bottom: 18px; width: 3px; }
+      .bottle-slot.selected { transform: translateY(-12px); }
+      .bottle-complete::after { width: 20px; height: 20px; top: 20px; font-size: 12px; }
+      .bottle-slot.hint-source::before,
+      .bottle-slot.hint-target::before { top: -13px; width: 23px; height: 23px; font-size: 11px; }
+
+      .meta-topbar { gap: 7px; }
+      .meta-topbar .icon-btn { width: 36px; height: 36px; }
+      .meta-title { font-size: 20px; }
+      .meta-subtitle { font-size: 10px; }
+      .coin-pill { min-width: 68px; padding: 8px 7px; font-size: 11px; }
+      .shop-section-head { align-items: flex-start; flex-direction: column; gap: 2px; }
+      .shop-section h3 { font-size: 17px; }
+      .economy-icon { font-size: 23px; }
+      .economy-card span { font-size: 10px; }
+    }
+
+    @media (max-width: 360px) {
+      .game-screen { padding-left: 6px; padding-right: 6px; }
+      .top-left, .top-right { gap: 3px; }
+      .top-left .icon-btn, .top-right .icon-btn {
+        width: 34px;
+        height: 34px;
+        flex-basis: 34px;
+        font-size: 15px;
+      }
+      .level-card { min-width: 64px; }
+      .level-number { font-size: 16px; }
+      .stats { gap: 4px; margin-top: 6px; }
+      .stat { padding: 4px; }
+      .stat strong { font-size: 14px; }
+      .powerbar { gap: 4px; margin-top: 4px; }
+      .power-btn { min-height: 39px; font-size: 10px; padding: 4px; }
+      .board { max-width: 272px; column-gap: 7px; row-gap: 8px; }
+      .bottle-slot { width: 44px; height: 150px; }
+      .bottle-body { width: 41px; height: 128px; }
+      .bottle-neck { width: 27px; height: 25px; }
+      .hint { font-size: 10px; }
+      .level-grid { gap: 5px; }
+      .level-tile { min-height: 53px; border-radius: 11px; }
+      .level-tile .level-index { font-size: 15px; }
+      .shop-grid { gap: 6px; }
+      .shop-card { padding: 8px; }
+      .shop-name { font-size: 12px; }
+    }
+
+    /* Compact start/game layout for short portrait phones such as 320x568. */
+    @media (orientation: portrait) and (max-height: 700px) {
+      .menu-screen {
+        display: grid;
+        grid-template-columns: 1fr;
+        align-content: center;
+        padding: 56px 16px 18px;
+        gap: 0;
+        text-align: center;
+      }
+      .hero-scene { display: none; }
+      .menu-copy { max-width: 100%; }
+      h1 { font-size: clamp(42px, 14vw, 56px); line-height: .90; margin-bottom: 13px; }
+      .menu-copy p { max-width: 310px; margin: 0 auto 17px; font-size: 15px; line-height: 1.38; }
+      .menu-actions { width: min(330px, 100%); grid-template-columns: 1fr 1fr; gap: 8px; }
+      .menu-actions .primary-btn { grid-column: 1 / -1; min-height: 48px; padding: 11px 14px; font-size: 15px; }
+      .secondary-btn { min-height: 42px; padding: 9px 7px; border-radius: 14px; font-size: 12px; line-height: 1.2; }
+      .menu-audio { top: 10px; right: 10px; gap: 6px; }
+      .menu-audio-btn { width: 38px; height: 38px; border-radius: 12px; font-size: 16px; }
+
+      .stats { margin-top: 5px; }
+      .powerbar { margin-top: 3px; }
+      .board-wrap { padding-top: 3px; }
+      .bottle-slot { height: 146px; }
+      .bottle-body { height: 125px; }
+      .bottle-neck { height: 25px; }
+      .hint { min-height: 15px; font-size: 10px; padding-top: 0; }
+    }
+
+    /* Low landscape VK webviews: controls left, all nine bottles in one row. */
+    @media (orientation: landscape) and (max-height: 480px) {
+      .app-shell {
+        width: 100%;
+        height: 100dvh;
+        min-height: 100dvh;
+        padding:
+          max(6px, env(safe-area-inset-top))
+          max(8px, env(safe-area-inset-right))
+          max(6px, env(safe-area-inset-bottom))
+          max(8px, env(safe-area-inset-left));
+      }
+      .screen { width: 100%; height: 100%; min-height: 0; border-radius: 18px; }
+
+      .menu-screen {
+        height: 100%;
+        min-height: 0;
+        grid-template-columns: minmax(300px, 1.05fr) minmax(210px, .70fr);
+        gap: 14px;
+        padding: 18px 54px 18px 28px;
+        align-items: center;
+      }
+      .menu-copy { max-width: 470px; }
+      h1 { font-size: clamp(40px, 7.5vh, 54px); line-height: .88; margin-bottom: 10px; }
+      .menu-copy p { max-width: 420px; margin-bottom: 13px; font-size: 14px; line-height: 1.35; }
+      .menu-actions { width: min(430px, 100%); gap: 8px; }
+      .menu-actions .primary-btn { min-height: 43px; padding: 9px 14px; font-size: 14px; }
+      .secondary-btn { min-height: 39px; padding: 8px 9px; font-size: 12px; border-radius: 13px; }
+      .hero-scene { min-height: 250px; margin: 0; }
+      .hero-bottles { min-height: 250px; transform: scale(.57); }
+      .hero-scene::before { bottom: 18px; }
+      .menu-audio { top: 10px; right: 10px; }
+      .menu-audio-btn { width: 38px; height: 38px; border-radius: 12px; font-size: 16px; }
+
+      .game-screen {
+        height: 100%;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 215px minmax(0, 1fr);
+        grid-template-rows: auto auto 1fr auto;
+        column-gap: 10px;
+        row-gap: 5px;
+        padding: 7px 9px 6px;
+        overflow: hidden;
+      }
+      .topbar {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 7px;
+      }
+      .top-left .icon-btn, .top-right .icon-btn {
+        width: 34px;
+        height: 34px;
+        flex-basis: 34px;
+        border-radius: 10px;
+        font-size: 15px;
+      }
+      .level-card { min-width: 86px; }
+      .level-label { font-size: 9px; }
+      .level-number { font-size: 16px; }
+      .stats {
+        grid-column: 1;
+        grid-row: 2;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0,1fr));
+        gap: 5px;
+        margin: 0;
+        align-self: start;
+      }
+      .stat { min-width: 0; padding: 5px 3px; border-radius: 10px; font-size: 9px; }
+      .stat strong { font-size: 13px; }
+      .powerbar {
+        grid-column: 1;
+        grid-row: 3;
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+        align-content: start;
+        gap: 5px;
+        margin: 0;
+      }
+      .power-btn {
+        width: 100%;
+        min-width: 0;
+        min-height: 39px;
+        padding: 5px 7px;
+        border-radius: 11px;
+        flex-direction: row;
+        justify-content: space-between;
+        font-size: 10px;
+      }
+      .power-btn .cost { font-size: 8px; }
+      .board-wrap {
+        grid-column: 2;
+        grid-row: 2 / span 2;
+        min-height: 0;
+        padding: 0;
+        overflow: visible;
+      }
+      .board {
+        width: 100%;
+        max-width: none;
+        flex-wrap: nowrap;
+        justify-content: center;
+        row-gap: 0;
+        column-gap: clamp(5px, 1.15vw, 10px);
+      }
+      .bottle-slot { width: 46px; height: 148px; flex: 0 0 46px; }
+      .bottle-body {
+        width: 43px;
+        height: 126px;
+        border-width: 3px;
+        border-top-width: 2px;
+        border-radius: 8px 8px 14px 14px;
+      }
+      .bottle-neck { width: 28px; height: 26px; border-left-width: 3px; border-right-width: 3px; }
+      .bottle-neck::before { left: -6px; right: -6px; height: 7px; border-width: 2px; }
+      .bottle-slot.selected { transform: translateY(-9px); }
+      .bottle-complete::after { width: 18px; height: 18px; top: 18px; font-size: 10px; }
+      .hint {
+        grid-column: 1 / -1;
+        grid-row: 4;
+        min-height: 14px;
+        padding: 0 4px;
+        font-size: 9px;
+        line-height: 1.15;
+      }
+
+      .meta-screen { height: 100%; min-height: 0; padding: 9px 10px 7px; }
+      .meta-topbar { gap: 8px; }
+      .meta-topbar .icon-btn { width: 34px; height: 34px; }
+      .meta-title { font-size: 20px; }
+      .meta-subtitle { font-size: 10px; }
+      .coin-pill { min-width: 72px; padding: 7px 9px; font-size: 11px; }
+      .progress-track { margin: 7px 2px; }
+      .level-grid { grid-template-columns: repeat(10, minmax(0,1fr)); gap: 5px; }
+      .level-tile { min-height: 48px; border-radius: 11px; }
+      .level-tile .level-index { font-size: 14px; }
+      .level-tile .level-detail { min-height: 10px; font-size: 8px; }
+      .meta-footer { margin-top: 4px; font-size: 9px; }
+      .shop-scroll { padding-top: 4px; }
+      .shop-grid { grid-template-columns: repeat(4, minmax(0,1fr)); gap: 7px; }
+      .economy-card { margin: 5px 0 10px; padding: 9px 11px; }
+      .shop-section { margin-bottom: 13px; }
+      .shop-preview { height: 58px; }
+
+      .modal-backdrop { padding: 8px; }
+      .win-card { width: min(500px, 92%); padding: 14px 18px; border-radius: 18px; }
+      .win-icon { font-size: 32px; }
+      .win-card h2 { font-size: 23px; margin: 3px 0 4px; }
+      .win-card p { margin-bottom: 10px; font-size: 12px; }
+      .small-btn { padding: 9px 12px; border-radius: 11px; font-size: 12px; }
+    }
+
+    @media (orientation: landscape) and (max-height: 480px) and (max-width: 720px) {
+      .menu-screen { grid-template-columns: minmax(260px, 1.1fr) minmax(170px, .7fr); padding-left: 18px; padding-right: 44px; }
+      .game-screen { grid-template-columns: 185px minmax(0,1fr); column-gap: 7px; }
+      .board { column-gap: 4px; }
+      .bottle-slot { width: 38px; height: 138px; flex-basis: 38px; }
+      .bottle-body { width: 36px; height: 117px; }
+      .bottle-neck { width: 24px; height: 24px; }
+      .power-btn { font-size: 9px; }
+    }
+
+
+    /* R8 — platform-stable vector icon system: no system emoji/font glyphs in controls. */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    .svg-sprite { position: fixed; width: 0; height: 0; overflow: hidden; pointer-events: none; }
+    .ui-icon { width: 1em; height: 1em; display: inline-block; flex: 0 0 auto; fill: currentColor; color: inherit; vertical-align: -.12em; }
+    .menu-audio-btn .ui-icon, .icon-btn .ui-icon { width: 21px; height: 21px; }
+    .menu-audio-btn .ui-icon { width: 20px; height: 20px; }
+    .secondary-btn .ui-icon, .power-btn .ui-icon, .shop-buy .ui-icon { width: 16px; height: 16px; }
+    .shop-buy.buyable .ui-icon { width: 14px; height: 14px; color: #8f6900; flex: 0 0 auto; }
+    .icon-label { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 0; }
+    .coin-inline, .coin-pill, .coin-stat strong, .win-reward { gap: 5px; }
+    .coin-inline { display: inline-flex; align-items: center; }
+    .coin-stat strong { display: flex; align-items: center; justify-content: center; }
+    .win-reward { display: inline-flex; align-items: center; justify-content: center; }
+    .shop-buy { display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .coin-inline .ui-icon, .coin-pill .ui-icon, .coin-stat .ui-icon, .win-reward .ui-icon, .cost .ui-icon { width: 15px; height: 15px; color: #ffd65a; }
+    .economy-icon { display: grid; place-items: center; width: 34px; height: 34px; color: #ffd65a; }
+    .economy-icon .ui-icon { width: 30px; height: 30px; }
+    .level-lock { display: grid; place-items: center; width: 14px; height: 14px; }
+    .level-lock .ui-icon { width: 12px; height: 12px; }
+    .win-icon { display: grid; place-items: center; color: #ffd65a; }
+    .win-icon .ui-icon { width: 56px; height: 56px; }
+    .bottle-complete::after {
+      content: "";
+      background-color: #e8fff1;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m5 12.5 4.2 4.2L19 7' fill='none' stroke='%23168548' stroke-width='2.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: 15px 15px;
+      color: transparent;
+    }
+    @media (max-width: 700px) { .win-icon .ui-icon { width: 46px; height: 46px; } }
+    @media (orientation: landscape) and (max-height: 520px) { .win-icon .ui-icon { width: 32px; height: 32px; } }
+
+    /* R10 — premium visual polish. Keeps R7 geometry and R9 UX intact. */
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+      border-radius: 50%;
+      filter: blur(42px);
+      opacity: .55;
+    }
+    body::before {
+      width: 34vw;
+      height: 34vw;
+      min-width: 260px;
+      min-height: 260px;
+      left: -12vw;
+      bottom: -14vw;
+      background: rgba(54,132,255,.13);
+    }
+    body::after {
+      width: 30vw;
+      height: 30vw;
+      min-width: 220px;
+      min-height: 220px;
+      right: -10vw;
+      top: -12vw;
+      background: rgba(183,93,255,.10);
+    }
+    .app-shell { position: relative; z-index: 1; }
+
+    .screen {
+      border-color: rgba(255,255,255,.145);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.092), rgba(255,255,255,.028)),
+        linear-gradient(135deg, rgba(119,170,255,.025), transparent 46%);
+      box-shadow:
+        0 28px 72px rgba(0,0,0,.34),
+        inset 0 1px 0 rgba(255,255,255,.11),
+        inset 0 -1px 0 rgba(255,255,255,.035);
+    }
+    .screen::after {
+      content: "";
+      position: absolute;
+      left: 7%;
+      right: 7%;
+      top: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.42), transparent);
+      opacity: .7;
+      pointer-events: none;
+      z-index: 40;
+    }
+
+    h1 {
+      background: linear-gradient(180deg, #ffffff 12%, #e9f1ff 66%, #c8d8f6 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 18px 44px rgba(0,0,0,.16);
+    }
+
+    .primary-btn {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255,238,166,.52);
+      box-shadow:
+        0 14px 30px rgba(255,197,36,.23),
+        inset 0 1px 0 rgba(255,255,255,.55),
+        inset 0 -1px 0 rgba(158,102,0,.10);
+    }
+    .primary-btn::after {
+      content: "";
+      position: absolute;
+      top: -35%;
+      bottom: -35%;
+      width: 34%;
+      left: -48%;
+      transform: skewX(-18deg);
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.42), transparent);
+      transition: left .48s ease;
+      pointer-events: none;
+    }
+    .primary-btn:hover::after { left: 116%; }
+
+    .menu-audio-btn,
+    .icon-btn,
+    .secondary-btn {
+      backdrop-filter: blur(12px);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.085),
+        0 8px 20px rgba(0,0,0,.09);
+    }
+    .menu-audio-btn:hover,
+    .icon-btn:hover,
+    .secondary-btn:hover {
+      border-color: rgba(167,205,255,.25);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.12),
+        0 11px 24px rgba(0,0,0,.13),
+        0 0 0 1px rgba(126,190,255,.035);
+    }
+
+    .hero-bottles { filter: drop-shadow(0 30px 28px rgba(0,0,0,.20)); }
+    .hero-bottle {
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.055), rgba(255,255,255,.008) 48%, rgba(255,255,255,.045));
+      box-shadow:
+        inset 10px 0 15px rgba(255,255,255,.045),
+        inset -8px 0 14px rgba(118,164,222,.025),
+        0 22px 34px rgba(0,0,0,.15);
+      animation: heroBottleFloat 4.8s ease-in-out infinite;
+    }
+    .hero-bottle:nth-child(2) { animation-delay: -1.65s; }
+    .hero-bottle:nth-child(3) { animation-delay: -3.1s; }
+    .hero-bottle::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 18px;
+      bottom: 20px;
+      width: 4px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255,255,255,.46), rgba(255,255,255,.03));
+      opacity: .75;
+      pointer-events: none;
+      z-index: 6;
+    }
+    .hero-layer {
+      filter: saturate(1.05) brightness(1.02);
+      box-shadow: inset 0 1px rgba(255,255,255,.15), inset 0 -8px 12px rgba(0,0,0,.045);
+    }
+    @keyframes heroBottleFloat {
+      0%,100% { transform: rotate(var(--r, 0deg)) translateY(var(--y, 0px)); }
+      50% { transform: rotate(var(--r, 0deg)) translateY(calc(var(--y, 0px) - 6px)); }
+    }
+
+    .level-card {
+      padding: 8px 18px 9px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: linear-gradient(180deg, rgba(255,255,255,.065), rgba(255,255,255,.03));
+      box-shadow: inset 0 1px rgba(255,255,255,.06), 0 8px 20px rgba(0,0,0,.08);
+    }
+    .level-number { text-shadow: 0 3px 12px rgba(0,0,0,.15); }
+
+    .stat {
+      border: 1px solid rgba(255,255,255,.075);
+      background: linear-gradient(180deg, rgba(255,255,255,.068), rgba(255,255,255,.038));
+      box-shadow: inset 0 1px rgba(255,255,255,.045), 0 8px 20px rgba(0,0,0,.065);
+    }
+    .stat strong { text-shadow: 0 3px 10px rgba(0,0,0,.14); }
+
+    .board-wrap::before {
+      content: "";
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      bottom: 9%;
+      height: 88px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(92,154,255,.12), rgba(35,72,128,.04) 55%, transparent 74%);
+      filter: blur(8px);
+      transform: perspective(360px) rotateX(62deg);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .board { position: relative; z-index: 1; }
+
+    .bottle-slot:hover:not(:disabled) {
+      filter: drop-shadow(0 10px 16px rgba(120,180,255,.08));
+    }
+    .bottle-slot.selected {
+      filter:
+        drop-shadow(0 14px 18px rgba(255,214,90,.18))
+        drop-shadow(0 0 16px rgba(255,214,90,.12));
+    }
+    .bottle-slot.selected .bottle-body {
+      border-color: rgba(255,237,175,.92);
+      box-shadow:
+        inset 7px 0 11px rgba(255,255,255,.075),
+        0 0 0 1px rgba(255,215,89,.14),
+        0 0 28px rgba(255,215,89,.11),
+        0 16px 24px rgba(0,0,0,.16);
+    }
+    .bottle-body {
+      background:
+        linear-gradient(105deg, rgba(255,255,255,.055), rgba(255,255,255,.006) 36%, rgba(137,188,255,.025) 63%, rgba(255,255,255,.052));
+      box-shadow:
+        inset 7px 0 11px rgba(255,255,255,.055),
+        inset -6px 0 10px rgba(100,150,220,.018),
+        0 15px 24px rgba(0,0,0,.15);
+    }
+    .bottle-body::before {
+      content: "";
+      position: absolute;
+      width: 28%;
+      height: 62%;
+      right: 7px;
+      top: 18%;
+      border-radius: 50%;
+      transform: skewY(-9deg);
+      background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.018) 58%, transparent);
+      opacity: .65;
+      pointer-events: none;
+      z-index: 7;
+    }
+    .bottle-neck {
+      box-shadow: inset 5px 0 7px rgba(255,255,255,.035), inset -4px 0 6px rgba(100,150,220,.02);
+    }
+    .liquid-layer {
+      filter: saturate(1.045) brightness(1.015);
+      box-shadow: inset 0 1px rgba(255,255,255,.06), inset 0 -8px 14px rgba(0,0,0,.035);
+    }
+    .liquid-layer.top-liquid::before {
+      box-shadow: 0 1px 5px rgba(255,255,255,.09);
+    }
+    .bottle-complete .bottle-body {
+      box-shadow:
+        inset 7px 0 11px rgba(255,255,255,.07),
+        0 0 30px rgba(115,240,174,.095),
+        0 16px 24px rgba(0,0,0,.15);
+    }
+
+    .power-btn {
+      border-color: rgba(255,255,255,.13);
+      background: linear-gradient(180deg, rgba(255,255,255,.092), rgba(255,255,255,.052));
+      box-shadow: inset 0 1px rgba(255,255,255,.07), 0 9px 20px rgba(0,0,0,.075);
+    }
+    .power-btn:hover {
+      border-color: rgba(154,199,255,.24);
+      box-shadow: inset 0 1px rgba(255,255,255,.10), 0 12px 24px rgba(0,0,0,.10);
+    }
+    .power-btn .cost {
+      border: 1px solid rgba(255,255,255,.045);
+      box-shadow: inset 0 1px rgba(255,255,255,.035);
+    }
+
+    .coin-pill,
+    .economy-card {
+      box-shadow: inset 0 1px rgba(255,255,255,.055), 0 9px 22px rgba(0,0,0,.065);
+    }
+    .progress-track {
+      box-shadow: inset 0 1px 3px rgba(0,0,0,.20), 0 1px rgba(255,255,255,.025);
+    }
+    .progress-fill {
+      box-shadow: 0 0 16px rgba(85,217,139,.12);
+    }
+
+    .level-tile {
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,.072), rgba(255,255,255,.042));
+      box-shadow: inset 0 1px rgba(255,255,255,.035), 0 7px 17px rgba(0,0,0,.05);
+    }
+    .level-tile::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.075), transparent 42%);
+      opacity: .45;
+      pointer-events: none;
+    }
+    .level-tile:hover:not(:disabled) {
+      border-color: rgba(154,199,255,.24);
+      box-shadow: inset 0 1px rgba(255,255,255,.06), 0 10px 21px rgba(0,0,0,.085);
+    }
+    .level-tile.current {
+      border-color: rgba(255,214,90,.72);
+      box-shadow:
+        0 0 0 1px rgba(255,214,90,.08) inset,
+        0 0 22px rgba(255,214,90,.075);
+    }
+    .level-tile.completed {
+      background: linear-gradient(180deg, rgba(85,217,139,.13), rgba(85,217,139,.075));
+    }
+
+    .shop-card {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,.066), rgba(255,255,255,.038));
+      box-shadow: inset 0 1px rgba(255,255,255,.035), 0 9px 20px rgba(0,0,0,.06);
+      transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+    .shop-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(163,204,255,.22);
+      background: linear-gradient(180deg, rgba(255,255,255,.086), rgba(255,255,255,.048));
+      box-shadow: inset 0 1px rgba(255,255,255,.055), 0 14px 28px rgba(0,0,0,.10);
+    }
+    .shop-preview::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 25% 18%, rgba(255,255,255,.13), transparent 36%),
+        linear-gradient(135deg, rgba(255,255,255,.055), transparent 55%);
+      pointer-events: none;
+    }
+    .shop-buy {
+      transition: transform .15s ease, filter .15s ease, background .15s ease;
+      box-shadow: inset 0 1px rgba(255,255,255,.04);
+    }
+    .shop-buy:not(:disabled):hover { transform: translateY(-1px); filter: brightness(1.04); }
+    .shop-buy.buyable {
+      box-shadow: 0 8px 18px rgba(255,198,45,.13), inset 0 1px rgba(255,255,255,.28);
+    }
+
+    .modal-backdrop {
+      background:
+        radial-gradient(circle at 50% 42%, rgba(86,138,255,.09), transparent 42%),
+        rgba(3,8,18,.64);
+      backdrop-filter: blur(13px) saturate(1.08);
+    }
+    .win-card {
+      position: relative;
+      overflow: hidden;
+      border-color: rgba(255,255,255,.18);
+      background:
+        linear-gradient(180deg, rgba(39,58,96,.985), rgba(12,23,44,.99)),
+        rgba(12,23,44,.99);
+      box-shadow:
+        0 30px 84px rgba(0,0,0,.46),
+        inset 0 1px rgba(255,255,255,.095);
+    }
+    .win-card::before {
+      content: "";
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      left: 50%;
+      top: -150px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: rgba(255,214,90,.10);
+      filter: blur(12px);
+      pointer-events: none;
+    }
+    .win-icon {
+      position: relative;
+      filter: drop-shadow(0 0 16px rgba(255,214,90,.22));
+    }
+    .win-card h2 { position: relative; letter-spacing: -.025em; }
+    .win-reward {
+      box-shadow: inset 0 1px rgba(255,255,255,.06), 0 8px 22px rgba(255,198,45,.08);
+    }
+    .small-btn {
+      box-shadow: inset 0 1px rgba(255,255,255,.055), 0 8px 18px rgba(0,0,0,.075);
+    }
+    .small-btn.primary {
+      box-shadow: 0 10px 24px rgba(255,198,45,.14), inset 0 1px rgba(255,255,255,.28);
+    }
+
+    .toast {
+      backdrop-filter: blur(12px);
+      box-shadow: 0 14px 36px rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.055);
+    }
+
+    @media (max-width: 760px) {
+      .screen { box-shadow: 0 16px 42px rgba(0,0,0,.28), inset 0 1px rgba(255,255,255,.09); }
+      .level-card { padding: 6px 10px 7px; }
+      .board-wrap::before { left: 3%; right: 3%; bottom: 7%; opacity: .8; }
+      .shop-card:hover { transform: none; }
+    }
+
+    @media (orientation: landscape) and (max-height: 520px) {
+      .level-card { padding: 4px 8px 5px; border-radius: 11px; }
+      .board-wrap::before { height: 58px; bottom: 4%; }
+      .hero-bottle { animation-name: none; }
+    }
+
+
+
+    /* R13 — interaction feedback, restored pour feel, win stats and shop polish. */
+    .shop-buy.buyable .ui-icon {
+      color: #ffd65a;
+      width: 14px;
+      height: 14px;
+      padding: 2px;
+      box-sizing: content-box;
+      border-radius: 50%;
+      background: rgba(59,43,0,.78);
+      filter: drop-shadow(0 1px 1px rgba(59,43,0,.28));
+    }
+
+    .bottle-slot.valid-target:not(.selected) {
+      filter: drop-shadow(0 0 10px rgba(103,211,255,.15));
+    }
+    .bottle-slot.valid-target:not(.selected) .bottle-body {
+      border-color: rgba(169,226,255,.82);
+      box-shadow:
+        inset 7px 0 11px rgba(255,255,255,.065),
+        0 0 0 1px rgba(100,205,255,.10),
+        0 0 18px rgba(90,201,255,.10),
+        0 15px 24px rgba(0,0,0,.15);
+    }
+    .bottle-slot.valid-target:hover:not(:disabled),
+    .bottle-slot.valid-target:focus-visible:not(:disabled),
+    .bottle-slot.valid-target:active:not(:disabled) {
+      filter:
+        drop-shadow(0 0 14px rgba(103,211,255,.32))
+        drop-shadow(0 10px 18px rgba(0,0,0,.08));
+    }
+    .bottle-slot.valid-target:hover:not(:disabled) .bottle-body,
+    .bottle-slot.valid-target:focus-visible:not(:disabled) .bottle-body,
+    .bottle-slot.valid-target:active:not(:disabled) .bottle-body {
+      border-color: rgba(211,243,255,.96);
+      box-shadow:
+        inset 7px 0 11px rgba(255,255,255,.085),
+        0 0 0 2px rgba(111,214,255,.16),
+        0 0 27px rgba(94,207,255,.20),
+        0 16px 24px rgba(0,0,0,.15);
+    }
+
+    .bottle-slot.just-completed .bottle-body {
+      animation: r13CompleteGlow .78s cubic-bezier(.2,.8,.2,1);
+    }
+    @keyframes r13CompleteGlow {
+      0% { transform: scale(1); filter: brightness(1); }
+      38% { transform: scale(1.035); filter: brightness(1.11); box-shadow: inset 7px 0 11px rgba(255,255,255,.09), 0 0 38px rgba(100,245,168,.32), 0 16px 24px rgba(0,0,0,.14); }
+      100% { transform: scale(1); filter: brightness(1); }
+    }
+
+    .hint.tutorial-hint {
+      color: rgba(229,244,255,.94);
+      font-weight: 750;
+      text-shadow: 0 2px 10px rgba(0,0,0,.16);
+    }
+
+    .win-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 9px;
+      margin: -5px 0 12px;
+    }
+    .win-stat {
+      padding: 9px 10px;
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 12px;
+      background: rgba(255,255,255,.055);
+      text-align: center;
+    }
+    .win-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      margin-bottom: 3px;
+    }
+    .win-stat strong { font-size: 18px; }
+    .win-record {
+      width: fit-content;
+      margin: -4px auto 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,219,99,.22);
+      background: rgba(255,214,90,.12);
+      color: #ffe279;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .01em;
+      animation: r13RecordPop .55s cubic-bezier(.2,.9,.25,1.12);
+    }
+    @keyframes r13RecordPop {
+      from { opacity: 0; transform: translateY(6px) scale(.92); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .shop-card {
+      transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+    .shop-card.shop-previewing {
+      border-color: rgba(161,211,255,.28);
+      box-shadow: 0 12px 25px rgba(0,0,0,.10), 0 0 0 1px rgba(132,197,255,.05);
+    }
+    .shop-card.shop-confirm {
+      animation: r13ShopConfirm .7s cubic-bezier(.2,.9,.25,1.08);
+    }
+    @keyframes r13ShopConfirm {
+      0% { transform: scale(1); box-shadow: 0 0 0 rgba(85,217,139,0); }
+      38% { transform: scale(1.025); box-shadow: 0 0 26px rgba(85,217,139,.20); border-color: rgba(117,239,169,.36); }
+      100% { transform: scale(1); box-shadow: 0 0 0 rgba(85,217,139,0); }
+    }
+
+    @media (max-width: 700px), (orientation: landscape) and (max-height: 520px) {
+      .win-stats { gap: 6px; margin-bottom: 8px; }
+      .win-stat { padding: 6px 8px; }
+      .win-stat strong { font-size: 15px; }
+      .win-record { margin-bottom: 8px; padding: 5px 9px; }
+    }
+
+  </style>
+</head>
+<body>
+  <svg class="svg-sprite" aria-hidden="true" focusable="false">
+    <symbol id="icon-sound" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 8.5c1.3 1.4 1.3 5.6 0 7M18.8 6c2.9 3 2.9 9 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="icon-muted" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="m17 9 5 6m0-6-5 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></symbol>
+    <symbol id="icon-music" viewBox="0 0 24 24"><path d="M10 5v11.1a3.3 3.3 0 1 1-2-3V7l11-2v9.1a3.3 3.3 0 1 1-2-3V3.7L10 5Z"/></symbol>
+    <symbol id="icon-music-off" viewBox="0 0 24 24"><path d="M10 7.2V16a3.3 3.3 0 1 1-2-3v-7l9-1.7V10"/><path d="M4 4l16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="icon-levels" viewBox="0 0 24 24"><path d="M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm10 0h6v6h-6v-6Z"/></symbol>
+    <symbol id="icon-shop" viewBox="0 0 24 24"><path d="M6 8h12l1 12H5L6 8Z"/><path d="M9 9V7a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="icon-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".45"/><path d="M14.8 8.7c-.7-.7-1.6-1-2.8-1-1.6 0-2.7.8-2.7 2 0 3.2 5.8 1.5 5.8 4.7 0 1.2-1.1 2.1-3 2.1-1.3 0-2.4-.4-3.2-1.2M12 6.4v11.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+    <symbol id="icon-coin-buy" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="9.1" cy="9.1" r="2.1" fill="#fff2a8" opacity=".42"/><path d="M7.5 13.2a4.9 4.9 0 0 0 9 1.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".4"/></symbol>
+    <symbol id="icon-back" viewBox="0 0 24 24"><path d="M19 12H5m6-6-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-home" viewBox="0 0 24 24"><path d="m4 11 8-7 8 7v9h-6v-6h-4v6H4v-9Z"/></symbol>
+    <symbol id="icon-undo" viewBox="0 0 24 24"><path d="M9 7 4 12l5 5v-3h5.5a4.5 4.5 0 1 0 0-9H12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-restart" viewBox="0 0 24 24"><path d="M19 8V4m0 0h-4m4 0-3.1 3.1A7 7 0 1 0 18.5 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-hint" viewBox="0 0 24 24"><path d="M9 18h6m-5 3h4M8.3 15.5A7 7 0 1 1 15.7 15.5C14.8 16.2 14 17 14 18h-4c0-1-.8-1.8-1.7-2.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-video" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 6 3-6 3V9Z" fill="var(--icon-cutout,#10213b)"/></symbol>
+    <symbol id="icon-bottle" viewBox="0 0 24 24"><path d="M9 3h6v4l2 3v9a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-9l2-3V3Z"/><path d="M8 13h8" fill="none" stroke="var(--icon-cutout,#10213b)" stroke-width="1.5"/></symbol>
+    <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V8a4 4 0 0 1 8 0v2" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="icon-sparkles" viewBox="0 0 24 24"><path d="m12 2 1.7 5.3L19 9l-5.3 1.7L12 16l-1.7-5.3L5 9l5.3-1.7L12 2Zm7 12 .9 2.6L22.5 18l-2.6.9L19 21.5l-.9-2.6-2.6-.9 2.6-1.4L19 14ZM5 15l.8 2.2L8 18l-2.2.8L5 21l-.8-2.2L2 18l2.2-.8L5 15Z"/></symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12.5 4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </svg>
+
+  <main class="app-shell">
+    <section class="screen" id="app">
+      <div class="menu-screen" id="menuScreen">
+        <div class="menu-audio" aria-label="Настройки звука">
+          <button class="menu-audio-btn" id="menuSoundBtn" title="Звуки" aria-label="Включить или выключить звуки"><svg class="ui-icon" aria-hidden="true"><use href="#icon-sound"></use></svg></button>
+          <button class="menu-audio-btn" id="menuMusicBtn" title="Музыка" aria-label="Включить или выключить музыку"><svg class="ui-icon" aria-hidden="true"><use href="#icon-music"></use></svg></button>
+        </div>
+
+        <div class="menu-copy">
+          <h1>Цветные<br>бутылки</h1>
+          <p>Собери каждый цвет в отдельной бутылке.</p>
+          <div class="menu-actions">
+            <button class="primary-btn" id="playBtn">Продолжить</button>
+            <button class="secondary-btn" id="levelsBtn"><span class="icon-label"><svg class="ui-icon" aria-hidden="true"><use href="#icon-levels"></use></svg>Уровни</span></button>
+            <button class="secondary-btn" id="shopBtn"><span class="icon-label"><svg class="ui-icon" aria-hidden="true"><use href="#icon-shop"></use></svg>Магазин · <span class="coin-inline" id="menuCoins">60<svg class="ui-icon" aria-hidden="true"><use href="#icon-coin"></use></svg></span></span></button>
+          </div>
+        </div>
+
+        <div class="hero-scene" aria-hidden="true">
+          <i class="hero-spark s1"></i>
+          <i class="hero-spark s2"></i>
+          <i class="hero-spark s3"></i>
+          <div class="hero-bottles">
+            <div class="hero-bottle" style="--r:-7deg;--y:16px">
+              <i class="hero-layer" style="bottom:0;background:#ff5f70"></i>
+              <i class="hero-layer" style="bottom:24%;background:#ffd15c"></i>
+              <i class="hero-layer" style="bottom:48%;background:#55d98b"></i>
+            </div>
+            <div class="hero-bottle" style="--r:4deg;--y:-4px">
+              <i class="hero-layer" style="bottom:0;background:#6ca8ff"></i>
+              <i class="hero-layer" style="bottom:24%;background:#6ca8ff"></i>
+              <i class="hero-layer" style="bottom:48%;background:#b57cff"></i>
+              <i class="hero-layer" style="bottom:72%;background:#ff78b5"></i>
+            </div>
+            <div class="hero-bottle" style="--r:-2deg;--y:12px">
+              <i class="hero-layer" style="bottom:0;background:#55d98b"></i>
+              <i class="hero-layer" style="bottom:24%;background:#55d98b"></i>
+              <i class="hero-layer" style="bottom:48%;background:#55d98b"></i>
+              <i class="hero-layer" style="bottom:72%;background:#55d98b"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="meta-screen hidden" id="levelsScreen">
+        <div class="meta-topbar">
+          <button class="icon-btn" id="levelsBackBtn" title="Назад" aria-label="Назад"><svg class="ui-icon" aria-hidden="true"><use href="#icon-back"></use></svg></button>
+          <div class="meta-heading">
+            <div class="meta-title">Выбор уровня</div>
+            <div class="meta-subtitle" id="levelsProgressText">Пройдено 0 из 100</div>
+          </div>
+          <div class="coin-pill" id="levelsCoins">60<svg class="ui-icon" aria-hidden="true"><use href="#icon-coin"></use></svg></div>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="levelsProgressFill"></div></div>
+        <div class="level-grid" id="levelGrid" aria-label="Список уровней"></div>
+        <div class="meta-footer">Пройденные уровни можно переигрывать. Закрытые открываются по порядку.</div>
+      </div>
+
+      <div class="meta-screen hidden" id="shopScreen">
+        <div class="meta-topbar">
+          <button class="icon-btn" id="shopBackBtn" title="Назад" aria-label="Назад"><svg class="ui-icon" aria-hidden="true"><use href="#icon-back"></use></svg></button>
+          <div class="meta-heading">
+            <div class="meta-title">Магазин</div>
+            <div class="meta-subtitle">Косметика за игровые монеты</div>
+          </div>
+          <div class="coin-pill" id="shopCoins">60<svg class="ui-icon" aria-hidden="true"><use href="#icon-coin"></use></svg></div>
+        </div>
+        <div class="shop-scroll">
+          <div class="economy-card">
+            <div class="economy-icon"><img class="coin-art" src="assets/ui/coin-64.png" width="64" height="64" alt="" aria-hidden="true"></div>
+            <div><strong>+25 монет за новый уровень</strong><span>Монеты выдаются за первое прохождение каждого уровня. Подсказка стоит 15 монет. Покупки ниже только косметические и не мешают пройти игру.</span></div>
+          </div>
+          <section class="shop-section">
+            <div class="shop-section-head"><h3>Темы мира</h3><span>Меняют фон и атмосферу</span></div>
+            <div class="shop-grid" id="themeShopGrid"></div>
+          </section>
+          <section class="shop-section">
+            <div class="shop-section-head"><h3>Стекло бутылок</h3><span>Меняет оттенок стекла</span></div>
+            <div class="shop-grid" id="glassShopGrid"></div>
+          </section>
+          <div class="shop-note">В магазине нет покупок за реальные деньги. Все предметы приобретаются за монеты, заработанные внутри игры.</div>
+        </div>
+      </div>
+
+      <div class="game-screen hidden" id="gameScreen">
+        <div class="topbar">
+          <div class="top-left">
+            <button class="icon-btn" id="menuBtn" title="В меню" aria-label="В меню"><svg class="ui-icon" aria-hidden="true"><use href="#icon-home"></use></svg></button>
+            <button class="icon-btn" id="soundBtn" title="Звуковые эффекты" aria-label="Звуковые эффекты"><svg class="ui-icon" aria-hidden="true"><use href="#icon-sound"></use></svg></button>
+            <button class="icon-btn" id="musicBtn" title="Фоновая музыка" aria-label="Фоновая музыка"><svg class="ui-icon" aria-hidden="true"><use href="#icon-music"></use></svg></button>
+          </div>
+          <div class="level-card">
+            <div class="level-label">Уровень</div>
+            <div class="level-number" id="levelNumber">1 / 100</div>
+          </div>
+          <div class="top-right">
+            <button class="icon-btn" id="undoBtn" title="Отменить ход" aria-label="Отменить ход"><svg class="ui-icon" aria-hidden="true"><use href="#icon-undo"></use></svg></button>
+            <button class="icon-btn" id="restartBtn" title="Начать заново" aria-label="Начать заново"><svg class="ui-icon" aria-hidden="true"><use href="#icon-restart"></use></svg></button>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">Ходы<strong id="movesCount">0</strong></div>
+          <div class="stat">Готово<strong id="completedCount">0</strong></div>
+          <div class="stat coin-stat">Монеты<strong id="coinsCount">60<svg class="ui-icon" aria-hidden="true"><use href="#icon-coin"></use></svg></strong></div>
+        </div>
+
+        <div class="powerbar">
+          <button class="power-btn" id="hintBtn" title="Показать полезный ход">
+            <span class="icon-label"><svg class="ui-icon" aria-hidden="true"><use href="#icon-hint"></use></svg>Подсказка</span><span class="cost icon-label">15<img class="coin-art" src="assets/ui/coin-24.png" width="24" height="24" alt="" aria-hidden="true"></span>
+          </button>
+          <button class="power-btn rewarded" id="extraBottleBtn" title="Посмотреть рекламу и получить одну дополнительную пустую бутылку">
+            <span class="icon-label"><svg class="ui-icon" aria-hidden="true"><use href="#icon-video"></use></svg>Смотреть рекламу</span><span class="cost">+1 бутылка</span>
+          </button>
+        </div>
+
+        <div class="board-wrap">
+          <div class="board" id="board" role="group" aria-label="Игровое поле с бутылками"></div>
+        </div>
+        <div class="hint" id="hint" role="status" aria-live="polite" aria-atomic="true">Нажми на бутылку, из которой хочешь перелить цвет.</div>
+      </div>
+
+      <div class="modal-backdrop hidden" id="winModal" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+        <div class="win-card">
+          <div class="win-icon"><svg class="ui-icon" aria-hidden="true"><use href="#icon-sparkles"></use></svg></div>
+          <h2 id="winTitle">Уровень пройден!</h2>
+          <p id="winText">Отлично! Все цвета рассортированы.</p>
+          <div class="win-stats" aria-label="Статистика прохождения">
+            <div class="win-stat"><span>Ходы</span><strong id="winMoves">0</strong></div>
+            <div class="win-stat"><span>Лучший результат</span><strong id="winBest">0</strong></div>
+          </div>
+          <div class="win-record hidden" id="winRecord">Новый рекорд!</div>
+          <div class="win-reward hidden" id="winReward">+25<svg class="ui-icon" aria-hidden="true"><use href="#icon-coin"></use></svg></div>
+          <div class="win-actions">
+            <button class="small-btn" id="replayBtn">Ещё раз</button>
+            <button class="small-btn primary" id="nextBtn">Следующий уровень</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/@vkontakte/vk-bridge@2.15.12/dist/browser.min.js"></script>
+  <script>
+    (() => {
+      'use strict';
+
+      const vkBridge = window.vkBridge;
+      async function initVKBridge() {
+        if (!vkBridge || typeof vkBridge.send !== 'function') {
+          if (new URLSearchParams(location.search).has('vk_app_id')) {
+            console.warn('VK Bridge недоступен: игра продолжает работу без платформенных функций.');
+          }
+          return false;
+        }
+        try {
+          await vkBridge.send('VKWebAppInit');
+          return true;
+        } catch (error) {
+          console.warn('VKWebAppInit failed:', error);
+          return false;
+        }
+      }
+
+
+      const CAPACITY = 4;
+      const COLORS = [
+        '#ff5f70',
+        '#6ca8ff',
+        '#55d98b',
+        '#ffd15c',
+        '#b57cff',
+        '#ff8a55',
+        '#43d7d1'
+      ];
+      const COLOR_NAMES = ['красный', 'синий', 'зелёный', 'жёлтый', 'фиолетовый', 'оранжевый', 'бирюзовый'];
+
+      const LEVELS = [
+        [[1],[0,0,1],[0,2,0,1],[],[2,2,2,1]],
+        [[2,0,1],[],[2],[1,1,1,2],[0,0,0,2]],
+        [[1,1,1,2],[],[2],[0,0,2],[3,3,3,0],[1,3,0,2]],
+        [[3,3,0],[],[0,0],[2,2,2,1],[1,1,1,3],[3,2,0]],
+        [[0,1,3],[2,2,2,3],[3],[0,0,0,2],[1,1,1,3],[]],
+        [[4,4,4,1],[3],[0,0,3],[],[1,1,1,3],[4,2,3,0],[2,2,2,0]],
+        [[0,0,0,2],[4],[3,2,4],[],[2,2,1,4],[3,3,3,0],[1,1,1,4]],
+        [[1,1,1,4],[],[3],[4,4,4,0],[2,2,2,3],[0,0,0,3],[1,2,3]],
+        [[4,4],[3,3,3,2],[],[1,4],[1,0,5,1],[5,5,5,3],[2,2,1,4],[0,0,0,2]],
+        [[2,1,5,0],[1,1,1,0],[2,2,2,3],[4],[3,3,3,4],[],[5,5,5,0],[0,4,4]],
+        [[],[3,3,3,1],[0],[5,5,5,2],[2,2,2,4],[3,5,0,4],[1,1,1,4],[4,0,0]],
+        [[4,4,4,2],[1,1,1,4],[0],[5,5,5,0],[6,1,6,2],[6,6,3,0],[3,3,3,2],[],[2,5,0]],
+        [[3,5,2,1],[2,2],[6,6,6,1],[1,2],[],[3,3,3,6],[5,5,5,4],[4,4,4,0],[0,0,0,1]],
+        [[],[3,3,3,1],[5,5,5,4],[6,6,6,3],[4],[0,5,2],[2,2,2,4],[1,1,1,4],[0,0,0,6]],
+        [[],[6,6,4,4],[1,5,6,0],[0,0,4],[4],[3,3,3,2],[2,2,2,0],[1,1,3,6],[5,5,5,1]],
+        [[5,5,3,2],[2,2,1],[],[3,3,1],[1,1],[5,5,0,2],[4,4,4,3],[6,6,6,4],[0,0,0,6]],
+        [[4,4,3,3],[],[2,1,1],[1,2,2,2],[4,4,0,0],[5],[6,6,6,3],[0,0,6,5],[3,1,5,5]],
+        [[5,5,1,2],[2,2],[1,5,2],[],[6,6,6],[3,3,3,1],[0,1,6,5],[4,4,4,4],[0,0,0,3]],
+        [[6,6,6,2],[5],[0,5,4,4],[2,0,0,0],[1,1,1,5],[2,2,6],[],[3,3,5,1],[4,4,3,3]],
+        [[],[4,4,6,3],[0,1,1,1],[3,3,0,0],[],[5,5,5,3],[2,2,2,1],[4,4,5,2],[6,6,6,0]],
+        [[0,4,3],[3,3,3,2],[4,4,6],[0,0,0,1],[5,5,5,5],[1,1,4,2],[2,2,6],[],[6,6,1]],
+        [[2,0,0,4],[4,4,4,6],[2,2,2,6],[1,5,5],[3,3,3,1],[],[5,5],[0,0,1],[6,6,3,1]],
+        [[4,6,6,5],[],[5,5,2,2],[1,1,3],[3,3,5],[4,0,0],[0,0,3],[6,6,1,1],[2,2,4,4]],
+        [[4,4,4],[0,6,6,6],[3,3,3,1],[6,0,1],[2,0,0,1],[2,2,2,5],[5,5,5,3],[1,4],[]],
+        [[2,2,2,6],[4,4,4,0],[3,3,1],[6,6,6,5],[0,0,0,2],[],[5,5,1],[1,1],[3,4,5,3]],
+        [[2,2,2,2],[4,4,4,1],[],[5,1],[0,0],[1,6,3,0],[5,5,5,6],[6,6,4,1],[3,3,3,0]],
+        [[0,0,0,3],[4,4,6,3],[3,1,1,1],[6,6,6,2],[1],[],[4,4,3],[2,2,2,5],[5,5,5,0]],
+        [[0,4,1],[4,4,6],[6,6,6,3],[3,3,3,5],[0,0,0,2],[2,2,2,5],[5,5,4,1],[],[1,1]],
+        [[4,4],[1,1,0,5],[2,2,2,3],[5,5,5],[0,0,6,4],[6,6,4],[3,3,3,6],[],[2,1,1,0]],
+        [[],[6,1],[0,0,6,6],[2,2,2,5],[4,4,2,0],[3,3,4],[3,3,6,0],[5,5,5,4],[1,1,1]],
+        [[4,4,4,0],[],[5,5,5,4],[6,5,2,1],[0,0,0,3],[1],[2,2,2,1],[6,6,6,1],[3,3,3]],
+        [[3,3,3,2],[],[5,5,5,0],[0,0],[2,2,2,6],[4,4,4,3],[4,6,1,0],[6,6,5,1],[1,1]],
+        [[6,6,6,4],[3,3,5,2],[1],[5,5,2],[0,0,0,2],[3,3,0,6],[4,4,4,5],[1,1,1,2],[]],
+        [[1,1,2,5],[3,3,3],[4,4,4,1],[5,5,1,3],[4,0,2],[0,0,5],[2,2,0,6],[6,6,6],[]],
+        [[6,6,4,3],[1,1],[2,2,2,6],[4,4,1,1],[3,3,4],[],[0,0,0,6],[0,5,5,3],[5,5,2]],
+        [[1,1,1,6],[0,0,2,6],[2,2,1,5],[3,3,3,2],[0,0,4,6],[6,5,5],[],[5],[4,4,4,3]],
+        [[2,2,0,6],[4,4,6],[6,3,5,5],[5,1],[3,3,3,4],[],[1,1,1,6],[2,2,4],[0,0,0,5]],
+        [[4,4,4,3],[5,5,5,1],[3,3,3,1],[],[2,2,2,4],[2,6,5,0],[0,0,0,1],[],[6,6,6,1]],
+        [[4,4,4],[5,5,2,2],[2,2,3,4],[3,3,0,3],[0,0,1],[6,6],[1,1,5,1],[],[0,5,6,6]],
+        [[3,3,1,6],[6,6,2,0],[5,3,3,4],[2],[5,5,5,2],[4,4,4,6],[],[0,0,2],[1,1,1,0]],
+        [[4,4,4,0],[5,5,6],[2,1,5,5],[0,1,4],[1,1,0,3],[2,2,2,0],[],[3,3,3,6],[6,6]],
+        [[5,5,3,3],[2,2,5,5],[0,0,0,4],[1,1,1,0],[4,4],[6,4],[],[1,6,6,2],[3,3,2,6]],
+        [[],[1,1,1,0],[3,4,6,1],[0,0],[2,3,3,6],[4,3,2,6],[6,0],[2,2,4,4],[5,5,5,5]],
+        [[4,4,4,0],[],[3,3,3,2],[1,1,1,6],[4,2,3],[0,0,2,1],[5,5,5],[5,6,6],[2,0,6]],
+        [[0,0,0,3],[2,2,2,5],[3,3,5],[],[1,1,4],[6,6,4,3],[4,4,6,0],[1,1,6,2],[5,5]],
+        [[3],[0,0,3],[5,5,4,1],[],[6,6,5,3],[6,6,4,5],[2,2,0,0],[4,4,2,3],[1,1,1,2]],
+        [[3,0,1,1],[4,4,4,2],[2,2,2,6],[5,5,6,3],[5,5,4],[6,6,3],[0,0,0,1],[1,3],[]],
+        [[5,5,5,3],[],[1,1,1,0],[1,4,5,0],[3,3,2,6],[6,0],[6,6],[4,4,4,3],[2,2,2,0]],
+        [[4,4,1,4],[],[1,1,1,5],[5],[3,3,4,5],[2,2,2,5],[2,6,0],[6,6,6,3],[0,0,0,3]],
+        [[3,3,3,2],[6,6,2,4],[2,2,0,4],[0,0,5,4],[4],[],[1,6,6],[5,5,5,0],[1,1,1,3]],
+        [[3,0,4],[2,2,2,0],[4,4,4,6],[6,6],[5,5,1],[0,1,2,0],[3,3,3,5],[1,1,5,6],[]],
+        [[0,0,0,2],[2,2,5,4],[3,3,3,2],[1,1,0],[5,5,1],[3,5,4,1],[6,6],[],[6,4,4,6]],
+        [[5,5],[0,2,1,6],[6,5],[0,0,0,2],[1,1,5,6],[4,4,4,3],[2,2,4,6],[],[3,3,3,1]],
+        [[5,5,5,2],[3,3,0,1],[6,6,6,5],[1],[2,2,2,0],[3,4,3,1],[],[0,1,0],[4,4,4,6]],
+        [[1],[6,6,0,6],[0,0,6,1],[3,3,4,5],[5,5,3],[2,2,0,1],[],[4,4,4,3],[2,2,5,1]],
+        [[2,2,6,0],[6,6,6,1],[2,2,4,0],[],[5,5,5,3],[1,1,1,5],[4,4,0,4],[3],[0,3,3]],
+        [[5,5,5,4],[0,0,0,5],[3,6,0,1],[3,3,3,6],[],[4,4,1,2],[1,1,2],[2],[6,6,4,2]],
+        [[],[],[4,4,4,2],[1,1,1,5],[3,3,6,5],[0,2,5,5],[3,3,6,2],[0,0,0,4],[6,6,2,1]],
+        [[1,1,1,4],[],[2],[0,2,2],[4,4,4,0],[3,3,3,5],[6,6,0,6],[5,5,5,0],[3,1,6,2]],
+        [[5,5,6,2],[0,0,0,2],[6,6,0,2],[4,4,3,1],[1,1,1,2],[],[3,3,3,5],[4,4,5,6],[]],
+        [[1,1,3],[5,0,0],[4,5,5,1],[],[3,1,2,0],[6,6,6,2],[2,3,3],[4,4,4,6],[0,5,2]],
+        [[5,5,4,0],[3,3,3,6],[0,0,6,2],[],[6,2],[1,1,1,6],[4,4,4,1],[5,5,0,3],[2,2]],
+        [[5,5,1,2],[1,6,0,1],[0,0,0,2],[3,3],[],[5,5,1,2],[6,6,6,4],[4,4,4,2],[3,3]],
+        [[2,2,2,5],[],[0,0,0,2],[0,4,3,6],[1,4,1],[3,3,3,5],[4,1],[6,6,6,5],[5,4,1]],
+        [[2,2,2,6],[5,6,3],[6,4,3,4],[0,0,4,6],[],[3,3,0,1],[5,5,5,2],[4],[1,1,1,0]],
+        [[2,2,2,4],[5,5,3,6],[6],[3,6,6,3],[4,4,5],[1,1,1,2],[0,0,4,3],[0,1,0,5],[]],
+        [[],[2,2,2,5],[0,3,3,1],[4,4,4,5],[5,5,6],[0,0,1,1],[2,4,6,3],[6,0],[3,1,6]],
+        [[6],[5,5,5,0],[2,2,5,0],[0,0,6],[3,3,3,4],[],[1,1,1,6],[4,4,6,1],[3,2,2,4]],
+        [[3,0,4],[0,1,4,4],[4,2,2],[1,0,6,1],[3,3,3,5],[],[2,2],[6,6,6,0],[5,5,5,1]],
+        [[0,6,0],[4,1,1,6],[4,4,4,2],[],[3,3,3,1],[6,0,5,5],[5],[2,2,2,3],[1,6,0,5]],
+        [[2,4,1],[3,3,3,6],[6,0,0,5],[],[1,1],[0,4,2,1],[5,5,4],[4,2,2,5],[3,6,6,0]],
+        [[2,2,3,5],[1,1,1,3],[3,3,4],[0,0,4,6],[2,2,1,6],[6],[5,5,0,6],[],[4,4,5,0]],
+        [[6,6,4,2],[5,5,5,0],[0,0,0,6],[4,4,3,2],[5,1,4,3],[1,1,1,6],[3,3,2,2],[],[]],
+        [[],[0,0,0,4],[6,6,4,0],[3,3,3,6],[2,5],[3,1],[2,2,5,5],[4,4,2,1],[1,6,1,5]],
+        [[6,6,6,4],[4,4,2],[],[3,5,0],[4,6,5],[2,2,5,2],[5,1,1,3],[0,0,3],[1,1,0,3]],
+        [[0],[],[2,2,4,0],[3,3,1,0],[2,2,5,0],[5,5,6,3],[1,1,3],[4,4,4,1],[6,6,6,5]],
+        [[4,6,4,2],[3,3,4],[2,2,6,5],[5,2,1],[],[0,5,5],[1,1,3,4],[0,0,0,3],[6,6,1]],
+        [[5,5,5,6],[0,0,2,3],[],[1,1,2],[2,2,5,6],[3],[6,6,0,3],[4,4,1,3],[4,4,1,0]],
+        [[6,6,6,0],[0,0,4,3],[2,2,2,4],[],[3,4,3,4],[5,5,6,2],[5,5,1,3],[1,1,0,1],[]],
+        [[1,2],[6,6,0,2],[4,4,6,5],[3,3,3,4],[3,4,1,6],[],[2,5],[0,0,0,1],[5,5,2,1]],
+        [[6],[3,3,3,0],[0,0,5],[4,1,2,2],[2,2,6,6],[4,4,6,5],[],[5,5,4,1],[1,1,3,0]],
+        [[1,1,5],[2,2,6,1],[5,5,1,4],[2,2,0,3],[6,6,0,4],[3,3,3,6],[],[0,0,5,4],[4]],
+        [[0,0,5,2],[6,6,6,0],[5,5,5,1],[4],[2,4,4],[],[3,6,2,4],[3,3,3,0],[1,1,1,2]],
+        [[0,0,2,2],[],[3,2,5,1],[4,4,0,1],[6,6],[2,4,4,0],[5,5,3,6],[1,6],[3,3,5,1]],
+        [[],[0,1,1,0],[2,4,1,0],[5,5,5,3],[2,2,2,5],[6,6,6,3],[],[4,4,4,6],[3,3,1,0]],
+        [[1,1,1,0],[],[],[1,6,4,3],[4,4,4,6],[2,3,2,5],[0,0,0,3],[2,2,5,5],[6,6,3,5]],
+        [[1,1,1,0],[6,6,6,5],[4,2,5],[0,0,5,2],[3,3,0,1],[],[4,4,4,3],[5],[2,2,3,6]],
+        [[6,6,1],[2,2,5,6],[1],[4,4,3,1],[5,5,6,1],[],[4,4,0,2],[3,3,5,2],[0,0,0,3]],
+        [[5,5,5,1],[1,6,2],[0,3,1],[6,6,4,6],[],[4,4,2,0],[3,3,3,4],[2,5],[1,0,0,2]],
+        [[2,4,6],[6],[3,3,1,3],[5,5,5,2],[0,0,0,5],[4,2,3,6],[],[0,4,4,2],[1,1,6,1]],
+        [[],[4,4,1,0],[6,6,5,0],[0],[5,5,4,2],[3,6,6,4],[1,1,1,2],[3,3,3,5],[2,2,0]],
+        [[0,0,4,5],[5,5,2,6],[],[0,0,1,3],[6,2,6,6],[1,1,2,1],[4,4,4,5],[3,3,3,2],[]],
+        [[2,2,1,5],[4,4,4,3],[6,5,6,5],[0,0,0,5],[],[2,2,1,0],[1,1,3,6],[3,3,4,6],[]],
+        [[6,6,1,3],[4,4,4,0],[0,6,1,6],[3,3],[],[2,5,0,3],[1,5],[4,2,0,5],[5,2,2,1]],
+        [[0,0,2,6],[3,3,4,6],[5,5,5,1],[],[1,1,2,6],[],[0,0,3,6],[2,2,5,1],[4,4,4,3]],
+        [[3,3,3,4],[1,1,1,3],[6,2,5,4],[4,5,6],[],[2,2,6],[0,6,5,2],[5,4],[0,0,0,1]],
+        [[5,5,5,4],[3,3,1,6],[6],[2,2,3,6],[0,4,6],[1,1,1,5],[],[4,2,2,4],[0,0,0,3]],
+        [[5,5,5,2],[2,3,1,6],[4,4,0],[],[0,0,3,4],[3,5,0],[1,1,2,4],[6,6],[2,3,1,6]],
+        [[1,1,1,2],[3,3,4,6],[0,0,3,4],[2,2,6,1],[],[0,0,5,4],[4,2,6],[5,5,5,3],[6]],
+        [[],[0,3,3,4],[6,6,6,2],[0,0,0,4],[6,1,2,3],[2,4,1],[3,2,5,1],[5,5,5,4],[1]]
+      ];
+
+      const el = {
+        app: document.getElementById('app'),
+        menuScreen: document.getElementById('menuScreen'),
+        levelsScreen: document.getElementById('levelsScreen'),
+        shopScreen: document.getElementById('shopScreen'),
+        gameScreen: document.getElementById('gameScreen'),
+        playBtn: document.getElementById('playBtn'),
+        levelsBtn: document.getElementById('levelsBtn'),
+        shopBtn: document.getElementById('shopBtn'),
+        menuSoundBtn: document.getElementById('menuSoundBtn'),
+        menuMusicBtn: document.getElementById('menuMusicBtn'),
+        levelsBackBtn: document.getElementById('levelsBackBtn'),
+        shopBackBtn: document.getElementById('shopBackBtn'),
+        menuCoins: document.getElementById('menuCoins'),
+        levelsCoins: document.getElementById('levelsCoins'),
+        shopCoins: document.getElementById('shopCoins'),
+        levelsProgressText: document.getElementById('levelsProgressText'),
+        levelsProgressFill: document.getElementById('levelsProgressFill'),
+        levelGrid: document.getElementById('levelGrid'),
+        themeShopGrid: document.getElementById('themeShopGrid'),
+        glassShopGrid: document.getElementById('glassShopGrid'),
+        menuBtn: document.getElementById('menuBtn'),
+        soundBtn: document.getElementById('soundBtn'),
+        musicBtn: document.getElementById('musicBtn'),
+        undoBtn: document.getElementById('undoBtn'),
+        restartBtn: document.getElementById('restartBtn'),
+        board: document.getElementById('board'),
+        levelNumber: document.getElementById('levelNumber'),
+        movesCount: document.getElementById('movesCount'),
+        completedCount: document.getElementById('completedCount'),
+        coinsCount: document.getElementById('coinsCount'),
+        hintBtn: document.getElementById('hintBtn'),
+        extraBottleBtn: document.getElementById('extraBottleBtn'),
+        hint: document.getElementById('hint'),
+        winModal: document.getElementById('winModal'),
+        winText: document.getElementById('winText'),
+        winMoves: document.getElementById('winMoves'),
+        winBest: document.getElementById('winBest'),
+        winRecord: document.getElementById('winRecord'),
+        winReward: document.getElementById('winReward'),
+        winCard: document.querySelector('.win-card'),
+        replayBtn: document.getElementById('replayBtn'),
+        nextBtn: document.getElementById('nextBtn'),
+        toast: document.getElementById('toast')
+      };
+
+      function safeStorageGet(key) {
+        try {
+          return localStorage.getItem(key);
+        } catch (_) {
+          return null;
+        }
+      }
+
+      function safeStorageSet(key, value) {
+        try {
+          localStorage.setItem(key, value);
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function safeStorageRemove(key) {
+        try {
+          localStorage.removeItem(key);
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      const savedLevel = Number(safeStorageGet('colorSortLevel') || 0);
+      let currentLevel = Number.isInteger(savedLevel) ? Math.max(0, Math.min(savedLevel, LEVELS.length - 1)) : 0;
+      let bottles = [];
+      let selected = null;
+      let history = [];
+      let moves = 0;
+      let locked = false;
+      const legacySoundOn = safeStorageGet('colorSortSound') !== 'off';
+      let sfxOn = safeStorageGet('colorSortSfx') == null ? legacySoundOn : safeStorageGet('colorSortSfx') !== 'off';
+      let musicOn = safeStorageGet('colorSortMusic') == null ? legacySoundOn : safeStorageGet('colorSortMusic') !== 'off';
+      let coins = (() => {
+        const raw = safeStorageGet('colorSortCoins');
+        if (raw == null) return 60;
+        const value = Number(raw);
+        return Number.isFinite(value) && value >= 0 ? value : 60;
+      })();
+      function readStoredArray(key, fallback = []) {
+        try {
+          const value = JSON.parse(safeStorageGet(key) || 'null');
+          return Array.isArray(value) ? value : fallback;
+        } catch (_) {
+          return fallback;
+        }
+      }
+
+      function readStoredObject(key) {
+        try {
+          const value = JSON.parse(safeStorageGet(key) || 'null');
+          return value && typeof value === 'object' && !Array.isArray(value) ? value : null;
+        } catch (_) {
+          return null;
+        }
+      }
+
+      function getUnlockedIndex() {
+        const value = Number(safeStorageGet('colorSortUnlocked'));
+        return Number.isFinite(value) ? Math.max(0, Math.min(Math.floor(value), LEVELS.length - 1)) : 0;
+      }
+
+      let completedLevels = new Set(readStoredArray('colorSortCompletedLevels', []).filter(level => Number.isInteger(level) && level >= 0 && level < LEVELS.length));
+
+      const THEME_ITEMS = [
+        { id: 'midnight', name: 'Ночная долина', price: 0, desc: 'Классическая тёмно-синяя тема.', preview: 'linear-gradient(rgba(4,10,22,.12),rgba(4,10,22,.28)), url("assets/previews/night.webp") center / cover no-repeat' },
+        { id: 'meadow', name: 'Зелёные холмы', price: 120, desc: 'Тёплая пасторальная зелёная тема.', preview: 'linear-gradient(rgba(3,15,11,.10),rgba(3,15,11,.24)), url("assets/previews/green.webp") center / cover no-repeat' },
+        { id: 'sunset', name: 'Закат', price: 165, desc: 'Мягкие бордовые и золотые оттенки.', preview: 'linear-gradient(rgba(24,7,22,.08),rgba(24,7,22,.23)), url("assets/previews/sunset.webp") center / cover no-repeat' },
+        { id: 'amethyst', name: 'Аметист', price: 220, desc: 'Глубокий фиолетовый фэнтези-фон.', preview: 'linear-gradient(rgba(18,7,40,.08),rgba(18,7,40,.23)), url("assets/previews/amethyst.webp") center / cover no-repeat' }
+      ];
+      const GLASS_ITEMS = [
+        { id: 'ice', name: 'Ледяное стекло', price: 0, desc: 'Чистое холодное стекло.', glass: 'rgba(232,245,255,.82)' },
+        { id: 'gold', name: 'Золотое стекло', price: 90, desc: 'Тёплый золотистый контур.', glass: 'rgba(255,232,171,.86)' },
+        { id: 'rose', name: 'Розовое стекло', price: 120, desc: 'Мягкий розовый отблеск.', glass: 'rgba(255,213,232,.84)' },
+        { id: 'mint', name: 'Мятное стекло', price: 145, desc: 'Светлый изумрудный оттенок.', glass: 'rgba(210,255,239,.86)' }
+      ];
+      const VALID_THEMES = new Set(THEME_ITEMS.map(item => item.id));
+      const VALID_GLASS = new Set(GLASS_ITEMS.map(item => item.id));
+      let ownedThemes = new Set(readStoredArray('colorSortOwnedThemes', ['midnight']).filter(id => VALID_THEMES.has(id)));
+      let ownedGlass = new Set(readStoredArray('colorSortOwnedGlass', ['ice']).filter(id => VALID_GLASS.has(id)));
+      ownedThemes.add('midnight');
+      ownedGlass.add('ice');
+      let equippedTheme = VALID_THEMES.has(safeStorageGet('colorSortEquippedTheme')) ? safeStorageGet('colorSortEquippedTheme') : 'midnight';
+      let equippedGlass = VALID_GLASS.has(safeStorageGet('colorSortEquippedGlass')) ? safeStorageGet('colorSortEquippedGlass') : 'ice';
+      let extraBottleActive = false;
+      let hintMove = null;
+      let hintTimer = null;
+      let completionFeedbackIndex = null;
+      let audioCtx = null;
+      let toastTimer = null;
+      let activePourEngine = null;
+      let winFxRaf = 0;
+      let winFxCanvas = null;
+
+      let systemAudioPaused = false;
+      let resumeMusicAfterSystemPause = false;
+      const audioPauseReasons = new Set();
+      const lifecyclePauseReasons = new Set();
+      let lifecyclePaused = false;
+      let vkLifecycleSubscribed = false;
+      let audioMaster = null;
+      const activeAudioSources = new Set();
+      const HINT_COST = 15;
+      const LEVEL_REWARD = 25;
+      const INTERSTITIAL_MIN_INTERVAL = 90000;
+      const AD_CHECK_TIMEOUT = 5000;
+      const AD_SHOW_TIMEOUT = 120000;
+      let adBusy = false;
+
+      function readSessionNumber(key) {
+        try {
+          const value = Number(sessionStorage.getItem(key));
+          return Number.isFinite(value) && value >= 0 ? value : 0;
+        } catch (_) {
+          return 0;
+        }
+      }
+
+      function writeSessionNumber(key, value) {
+        try { sessionStorage.setItem(key, String(value)); } catch (_) {}
+      }
+
+      let lastInterstitialAt = readSessionNumber('colorSortLastInterstitialAt');
+      if (lastInterstitialAt > Date.now()) lastInterstitialAt = 0;
+      let levelsSinceInterstitial = Math.floor(readSessionNumber('colorSortLevelsSinceInterstitial'));
+      let musicBus = null;
+      let musicReverb = null;
+      let musicTimer = null;
+      let musicNextNoteTime = 0;
+      let musicStep = 0;
+      let fluteWave = null;
+
+      // Оригинальная пасторальная fantasy-тема: спокойный 6/8, деревянная флейта
+      // и очень тихие щипковые аккорды. Мелодия не копирует музыку из фильмов.
+      const MUSIC_BPM = 78;
+      const MUSIC_BEAT = 60 / MUSIC_BPM;
+      const PASTORAL_MELODY = [
+        [71, 1, [55,59,62]], [74, .5], [79, 1.5], [78, .5], [76, .5], [74, 1], [71, 1.5], [69, .5],
+        [67, 1, [48,55,60]], [69, .5], [71, .5], [74, 1.5], [76, .5], [74, 1], [71, .5], [69, .5], [67, 1.5], [null, .5],
+        [74, 1, [50,57,62]], [76, .5], [78, .5], [81, 1.5], [79, .5], [78, 1], [74, .5], [71, .5], [69, 1.5], [null, .5],
+        [71, 1, [52,59,64]], [74, .5], [76, 1], [74, .5], [71, 1], [69, .5], [67, .5], [69, 1], [71, .5], [67, 2], [null, 1]
+      ];
+
+      function isValidRunState(run) {
+        if (!run || !Number.isInteger(run.level) || run.level < 0 || run.level >= LEVELS.length) return false;
+        const base = LEVELS[run.level];
+        const hasExtra = Boolean(run.extraBottleActive);
+        if (!Array.isArray(run.bottles) || run.bottles.length !== base.length + (hasExtra ? 1 : 0)) return false;
+        if (!run.bottles.every(bottle => Array.isArray(bottle) && bottle.length <= CAPACITY && bottle.every(color => Number.isInteger(color) && color >= 0 && color < COLORS.length))) return false;
+        const expected = Array(COLORS.length).fill(0);
+        const actual = Array(COLORS.length).fill(0);
+        base.forEach(bottle => bottle.forEach(color => expected[color]++));
+        run.bottles.forEach(bottle => bottle.forEach(color => actual[color]++));
+        if (expected.some((count, color) => count !== actual[color])) return false;
+        return Number.isInteger(Number(run.moves)) && Number(run.moves) >= 0 && Number(run.moves) <= 1000000;
+      }
+
+      function getRunSnapshot() {
+        if (bottles.length) {
+          if (isWin()) return null;
+          return {
+            level: currentLevel,
+            bottles: cloneState(bottles),
+            moves,
+            extraBottleActive: Boolean(extraBottleActive)
+          };
+        }
+        const stored = readStoredObject('colorSortRunState');
+        return isValidRunState(stored) ? stored : null;
+      }
+
+      function continueGame() {
+        const run = readStoredObject('colorSortRunState');
+        if (!isValidRunState(run) || run.level !== currentLevel || stateIsSolved(run.bottles)) {
+          initLevel(currentLevel, false, true);
+          return;
+        }
+        currentLevel = run.level;
+        bottles = cloneState(run.bottles);
+        moves = Math.max(0, Math.floor(Number(run.moves) || 0));
+        extraBottleActive = Boolean(run.extraBottleActive) && bottles.length > LEVELS[currentLevel].length;
+        selected = null;
+        hintMove = null;
+        clearTimeout(hintTimer);
+        completionFeedbackIndex = null;
+        history = [];
+        locked = false;
+        cleanupPourEngine();
+        stopWinEffects();
+        closeWinModal();
+        updateMenuProgress();
+        render();
+        showGame();
+      }
+
+      const VK_SAVE_KEY = 'color_sort_save_v1';
+      const SAVE_VERSION = 1;
+      let vkBridgeReady = false;
+      let persistenceReady = false;
+      let persistenceRevision = 0;
+      let cloudSaveTimer = 0;
+      let pendingCloudSnapshot = null;
+      let cloudSaveChain = Promise.resolve();
+
+      function collectBestScores() {
+        const bests = {};
+        for (let index = 0; index < LEVELS.length; index++) {
+          const value = Number(safeStorageGet(`colorSortBest_${index}`) || 0);
+          if (Number.isInteger(value) && value > 0 && value <= 1000000) bests[index] = value;
+        }
+        return bests;
+      }
+
+      function buildProgressSnapshot(updatedAt = Date.now()) {
+        return {
+          v: SAVE_VERSION,
+          updatedAt,
+          level: currentLevel,
+          coins,
+          completed: [...completedLevels],
+          unlocked: getUnlockedIndex(),
+          run: getRunSnapshot(),
+          ownedThemes: [...ownedThemes],
+          ownedGlass: [...ownedGlass],
+          equippedTheme,
+          equippedGlass,
+          sfxOn,
+          musicOn,
+          bests: collectBestScores()
+        };
+      }
+
+      function normalizeProgressSnapshot(raw) {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw) || Number(raw.v) !== SAVE_VERSION) return null;
+        const level = Number(raw.level);
+        const coinsValue = Number(raw.coins);
+        const unlockedValue = Number(raw.unlocked);
+        if (!Number.isInteger(level) || level < 0 || level >= LEVELS.length) return null;
+        if (!Number.isFinite(coinsValue) || coinsValue < 0 || coinsValue > 1000000000) return null;
+
+        const completed = Array.isArray(raw.completed)
+          ? [...new Set(raw.completed.filter(value => Number.isInteger(value) && value >= 0 && value < LEVELS.length))]
+          : [];
+        const ownedThemeList = Array.isArray(raw.ownedThemes) ? raw.ownedThemes.filter(id => VALID_THEMES.has(id)) : [];
+        const ownedGlassList = Array.isArray(raw.ownedGlass) ? raw.ownedGlass.filter(id => VALID_GLASS.has(id)) : [];
+        if (!ownedThemeList.includes('midnight')) ownedThemeList.push('midnight');
+        if (!ownedGlassList.includes('ice')) ownedGlassList.push('ice');
+        const theme = ownedThemeList.includes(raw.equippedTheme) ? raw.equippedTheme : 'midnight';
+        const glass = ownedGlassList.includes(raw.equippedGlass) ? raw.equippedGlass : 'ice';
+        const run = isValidRunState(raw.run) && !stateIsSolved(raw.run.bottles) ? raw.run : null;
+        const bests = {};
+        if (raw.bests && typeof raw.bests === 'object' && !Array.isArray(raw.bests)) {
+          for (const [key, value] of Object.entries(raw.bests)) {
+            const index = Number(key);
+            const movesValue = Number(value);
+            if (Number.isInteger(index) && index >= 0 && index < LEVELS.length && Number.isInteger(movesValue) && movesValue > 0 && movesValue <= 1000000) {
+              bests[index] = movesValue;
+            }
+          }
+        }
+        const completedUnlock = completed.length ? Math.min(Math.max(...completed) + 1, LEVELS.length - 1) : 0;
+        const normalizedUnlocked = Number.isFinite(unlockedValue) ? Math.max(0, Math.min(Math.floor(unlockedValue), LEVELS.length - 1)) : 0;
+        return {
+          v: SAVE_VERSION,
+          updatedAt: Number.isFinite(Number(raw.updatedAt)) && Number(raw.updatedAt) > 0 ? Math.floor(Number(raw.updatedAt)) : 0,
+          level,
+          coins: Math.floor(coinsValue),
+          completed,
+          unlocked: Math.max(level, completedUnlock, normalizedUnlocked),
+          run,
+          ownedThemes: [...new Set(ownedThemeList)],
+          ownedGlass: [...new Set(ownedGlassList)],
+          equippedTheme: theme,
+          equippedGlass: glass,
+          sfxOn: raw.sfxOn !== false,
+          musicOn: raw.musicOn !== false,
+          bests
+        };
+      }
+
+      function writeSnapshotToLocal(snapshot) {
+        safeStorageSet('colorSortLevel', String(snapshot.level));
+        safeStorageSet('colorSortCoins', String(snapshot.coins));
+        safeStorageSet('colorSortCompletedLevels', JSON.stringify(snapshot.completed));
+        if (snapshot.run) safeStorageSet('colorSortRunState', JSON.stringify(snapshot.run));
+        else safeStorageRemove('colorSortRunState');
+        safeStorageSet('colorSortOwnedThemes', JSON.stringify(snapshot.ownedThemes));
+        safeStorageSet('colorSortOwnedGlass', JSON.stringify(snapshot.ownedGlass));
+        safeStorageSet('colorSortEquippedTheme', snapshot.equippedTheme);
+        safeStorageSet('colorSortEquippedGlass', snapshot.equippedGlass);
+        safeStorageSet('colorSortSfx', snapshot.sfxOn ? 'on' : 'off');
+        safeStorageSet('colorSortMusic', snapshot.musicOn ? 'on' : 'off');
+        safeStorageSet('colorSortUnlocked', String(snapshot.unlocked));
+        safeStorageSet('colorSortUpdatedAt', String(snapshot.updatedAt));
+        for (let index = 0; index < LEVELS.length; index++) {
+          const value = snapshot.bests[index];
+          if (value) safeStorageSet(`colorSortBest_${index}`, String(value));
+          else safeStorageRemove(`colorSortBest_${index}`);
+        }
+      }
+
+      function applyProgressSnapshot(snapshot) {
+        currentLevel = snapshot.level;
+        coins = snapshot.coins;
+        completedLevels = new Set(snapshot.completed);
+        ownedThemes = new Set(snapshot.ownedThemes);
+        ownedGlass = new Set(snapshot.ownedGlass);
+        ownedThemes.add('midnight');
+        ownedGlass.add('ice');
+        equippedTheme = snapshot.equippedTheme;
+        equippedGlass = snapshot.equippedGlass;
+        sfxOn = snapshot.sfxOn;
+        musicOn = snapshot.musicOn;
+        extraBottleActive = false;
+        bottles = [];
+        selected = null;
+        history = [];
+        moves = 0;
+        locked = false;
+        writeSnapshotToLocal(snapshot);
+        applyCosmetics();
+        syncAudioButtons();
+        updateMenuProgress();
+      }
+
+      function commitCloudSnapshot(snapshot) {
+        if (!snapshot || !vkBridgeReady) return cloudSaveChain;
+        cloudSaveChain = cloudSaveChain
+          .catch(() => {})
+          .then(() => vkBridge.send('VKWebAppStorageSet', { key: VK_SAVE_KEY, value: JSON.stringify(snapshot) }))
+          .catch(error => console.warn('VK Storage save failed; local save remains active:', error));
+        return cloudSaveChain;
+      }
+
+      function flushCloudSave() {
+        clearTimeout(cloudSaveTimer);
+        cloudSaveTimer = 0;
+        const next = pendingCloudSnapshot;
+        pendingCloudSnapshot = null;
+        return next ? commitCloudSnapshot(next) : cloudSaveChain;
+      }
+
+      function scheduleCloudSave(snapshot) {
+        if (!persistenceReady || !vkBridgeReady) return;
+        pendingCloudSnapshot = snapshot;
+        clearTimeout(cloudSaveTimer);
+        cloudSaveTimer = setTimeout(() => { void flushCloudSave(); }, 450);
+      }
+
+      function persistLocalProgress() {
+        persistenceRevision++;
+        const snapshot = normalizeProgressSnapshot(buildProgressSnapshot());
+        if (!snapshot) return;
+        writeSnapshotToLocal(snapshot);
+        scheduleCloudSave(snapshot);
+      }
+
+      async function loadVKSnapshot() {
+        if (!vkBridgeReady) return null;
+        try {
+          const response = await vkBridge.send('VKWebAppStorageGet', { keys: [VK_SAVE_KEY] });
+          const row = response && Array.isArray(response.keys) ? response.keys.find(item => item && item.key === VK_SAVE_KEY) : null;
+          if (!row || !row.value) return null;
+          return normalizeProgressSnapshot(JSON.parse(row.value));
+        } catch (error) {
+          console.warn('VK Storage load failed; local save will be used:', error);
+          return null;
+        }
+      }
+
+      async function initializePersistence() {
+        const initialRevision = persistenceRevision;
+        const localUpdatedAt = Number(safeStorageGet('colorSortUpdatedAt') || 0);
+        let localSnapshot = normalizeProgressSnapshot(buildProgressSnapshot(Number.isFinite(localUpdatedAt) ? localUpdatedAt : 0));
+        vkBridgeReady = await initVKBridge();
+        if (vkBridgeReady) bindVKLifecycle();
+        const cloudSnapshot = await loadVKSnapshot();
+
+        // Если игрок успел сделать действие во время сетевого чтения, перечитываем свежий local snapshot.
+        if (persistenceRevision !== initialRevision) {
+          const changedAt = Number(safeStorageGet('colorSortUpdatedAt') || Date.now());
+          localSnapshot = normalizeProgressSnapshot(buildProgressSnapshot(changedAt));
+        }
+
+        let selectedSnapshot = localSnapshot;
+        if (cloudSnapshot && (!localSnapshot || cloudSnapshot.updatedAt > localSnapshot.updatedAt)) {
+          selectedSnapshot = cloudSnapshot;
+        }
+        if (!selectedSnapshot) selectedSnapshot = normalizeProgressSnapshot(buildProgressSnapshot(Date.now()));
+        if (!selectedSnapshot) return;
+        if (!selectedSnapshot.updatedAt) selectedSnapshot.updatedAt = Date.now();
+
+        applyProgressSnapshot(selectedSnapshot);
+        persistenceReady = true;
+
+        // Облако отсутствует или отстаёт: синхронизируем его с более свежим локальным прогрессом.
+        if (vkBridgeReady && (!cloudSnapshot || selectedSnapshot.updatedAt > cloudSnapshot.updatedAt)) {
+          scheduleCloudSave(selectedSnapshot);
+        }
+      }
+
+      function registerAudioSource(source) {
+        if (!source) return source;
+        activeAudioSources.add(source);
+        source.addEventListener('ended', () => activeAudioSources.delete(source), { once: true });
+        return source;
+      }
+
+      function hardPauseAudio(reason = 'system') {
+        const wasPaused = audioPauseReasons.size > 0;
+        audioPauseReasons.add(reason);
+        if (wasPaused) {
+          systemAudioPaused = true;
+          return;
+        }
+
+        resumeMusicAfterSystemPause = Boolean(musicTimer);
+        systemAudioPaused = true;
+
+        if (musicTimer) {
+          clearInterval(musicTimer);
+          musicTimer = null;
+        }
+        musicStep = 0;
+
+        // Мгновенно закрываем общий аудиоканал, без fade-out.
+        if (audioCtx && audioMaster) {
+          const now = audioCtx.currentTime;
+          audioMaster.gain.cancelScheduledValues(now);
+          audioMaster.gain.setValueAtTime(0, now);
+        }
+
+        // Останавливаем уже запущенные и заранее запланированные ноты/эффекты,
+        // чтобы после возврата на вкладку не доигрывался старый звук.
+        for (const source of activeAudioSources) {
+          try { source.stop(); } catch (_) {}
+        }
+        activeAudioSources.clear();
+
+        if (audioCtx && audioCtx.state === 'running') {
+          audioCtx.suspend().catch(() => {});
+        }
+      }
+
+      function resumeSystemAudio(reason = 'system') {
+        audioPauseReasons.delete(reason);
+        if (audioPauseReasons.size > 0 || !systemAudioPaused) return;
+        if (document.hidden) return;
+
+        systemAudioPaused = false;
+        const shouldResumeMusic = resumeMusicAfterSystemPause && musicOn;
+        resumeMusicAfterSystemPause = false;
+
+        if (!audioCtx) {
+          if (shouldResumeMusic) startBackgroundMusic();
+          return;
+        }
+
+        const restore = () => {
+          if (audioMaster) {
+            const now = audioCtx.currentTime;
+            audioMaster.gain.cancelScheduledValues(now);
+            audioMaster.gain.setValueAtTime(1, now);
+          }
+          if (shouldResumeMusic && !document.hidden) startBackgroundMusic();
+        };
+
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume().then(restore).catch(() => {});
+        } else {
+          restore();
+        }
+      }
+
+      function pauseAudio(reason = 'system') {
+        hardPauseAudio(reason);
+      }
+
+      function resumeAudio(reason = 'system') {
+        resumeSystemAudio(reason);
+      }
+
+      function isInteractionBlocked() {
+        return adBusy || lifecyclePaused;
+      }
+
+      function syncInteractionState() {
+        const blocked = isInteractionBlocked();
+        el.app.style.pointerEvents = blocked ? 'none' : '';
+        el.app.toggleAttribute('inert', blocked);
+        el.app.setAttribute('aria-busy', blocked ? 'true' : 'false');
+        el.app.dataset.lifecyclePaused = lifecyclePaused ? 'true' : 'false';
+        el.nextBtn.disabled = blocked;
+        el.replayBtn.disabled = blocked;
+      }
+
+      function pauseLifecycle(reason) {
+        const firstPause = lifecyclePauseReasons.size === 0;
+        lifecyclePauseReasons.add(reason);
+        lifecyclePaused = true;
+        pauseAudio(`lifecycle:${reason}`);
+        syncInteractionState();
+
+        if (!firstPause) return;
+        if (activePourEngine) {
+          cleanupPourEngine();
+          locked = false;
+          selected = null;
+          if (!el.gameScreen.classList.contains('hidden')) render();
+        }
+        stopWinEffects();
+        if (persistenceReady) {
+          persistLocalProgress();
+          void flushCloudSave();
+        }
+      }
+
+      function resumeLifecycle(reason) {
+        lifecyclePauseReasons.delete(reason);
+        lifecyclePaused = lifecyclePauseReasons.size > 0;
+        resumeAudio(`lifecycle:${reason}`);
+        syncInteractionState();
+        if (lifecyclePaused || document.hidden) return;
+        if (!el.gameScreen.classList.contains('hidden')) render();
+      }
+
+      function handleVKLifecycleEvent(event) {
+        const type = event && event.detail && event.detail.type;
+        if (type === 'VKWebAppViewHide') pauseLifecycle('vk-view');
+        if (type === 'VKWebAppViewRestore') resumeLifecycle('vk-view');
+      }
+
+      function bindVKLifecycle() {
+        if (vkLifecycleSubscribed || !vkBridgeReady || !vkBridge || typeof vkBridge.subscribe !== 'function') return;
+        vkBridge.subscribe(handleVKLifecycleEvent);
+        vkLifecycleSubscribed = true;
+      }
+
+      function cloneState(state) {
+        return state.map(b => [...b]);
+      }
+
+      function clamp01(value) {
+        return Math.max(0, Math.min(1, value));
+      }
+
+      function lerp(a, b, t) {
+        return a + (b - a) * t;
+      }
+
+      function easeInOutCubic(t) {
+        t = clamp01(t);
+        return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      }
+
+      function easeOutCubic(t) {
+        t = clamp01(t);
+        return 1 - Math.pow(1 - t, 3);
+      }
+
+      function prefersReducedMotion() {
+        return Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      }
+
+      function closeWinModal() {
+        el.winModal.classList.add('hidden');
+        el.gameScreen.removeAttribute('inert');
+      }
+
+      function initLevel(index, preserveMenu = false, keepExtraBottle = false) {
+        currentLevel = Math.max(0, Math.min(index, LEVELS.length - 1));
+        const keepExtra = keepExtraBottle && extraBottleActive;
+        bottles = cloneState(LEVELS[currentLevel]);
+        extraBottleActive = keepExtra;
+        if (extraBottleActive) bottles.push([]);
+        selected = null;
+        hintMove = null;
+        clearTimeout(hintTimer);
+        completionFeedbackIndex = null;
+        history = [];
+        moves = 0;
+        locked = false;
+        cleanupPourEngine();
+        stopWinEffects();
+        closeWinModal();
+        persistLocalProgress();
+        updateMenuProgress();
+        render();
+        if (!preserveMenu) showGame();
+      }
+
+      function cleanupPourEngine() {
+        if (!activePourEngine) return;
+        if (activePourEngine.raf) cancelAnimationFrame(activePourEngine.raf);
+        activePourEngine.canvas?.remove();
+        activePourEngine.streamCanvas?.remove();
+        activePourEngine.sourceGlass?.remove();
+        activePourEngine.targetGlass?.remove();
+        if (activePourEngine.sourceEl) activePourEngine.sourceEl.style.visibility = '';
+        if (activePourEngine.targetEl) activePourEngine.targetEl.style.visibility = '';
+        activePourEngine = null;
+      }
+
+      function hidePrimaryScreens() {
+        applyCosmetics();
+        el.menuScreen.classList.add('hidden');
+        el.levelsScreen.classList.add('hidden');
+        el.shopScreen.classList.add('hidden');
+        el.gameScreen.classList.add('hidden');
+      }
+
+      function applyCosmetics() {
+        document.body.dataset.theme = equippedTheme;
+        document.body.dataset.glass = equippedGlass;
+      }
+
+      function previewShopItem(type, id) {
+        if (type === 'theme' && VALID_THEMES.has(id)) document.body.dataset.theme = id;
+        if (type === 'glass' && VALID_GLASS.has(id)) document.body.dataset.glass = id;
+      }
+
+      function pulseShopCard(type, id) {
+        requestAnimationFrame(() => {
+          const card = Array.from(document.querySelectorAll('.shop-card')).find(node =>
+            node.dataset.shopType === type && node.dataset.shopId === id
+          );
+          if (!card) return;
+          card.classList.remove('shop-confirm');
+          void card.offsetWidth;
+          card.classList.add('shop-confirm');
+        });
+      }
+
+
+      function createUiIcon(name, className = '') {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', `ui-icon${className ? ` ${className}` : ''}`);
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('focusable', 'false');
+        const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+        use.setAttribute('href', `#icon-${name}`);
+        svg.appendChild(use);
+        return svg;
+      }
+
+      function createCoinImage(className = '') {
+        const img = document.createElement('img');
+        img.src = 'assets/ui/coin-24.png';
+        img.alt = '';
+        img.setAttribute('aria-hidden', 'true');
+        img.className = `coin-art${className ? ` ${className}` : ''}`;
+        img.width = 24;
+        img.height = 24;
+        return img;
+      }
+
+      function setIconButton(button, iconName) {
+        if (!button) return;
+        button.replaceChildren(createUiIcon(iconName));
+      }
+
+      function setIconLabel(target, iconName, text) {
+        if (!target) return;
+        target.replaceChildren(createUiIcon(iconName), document.createTextNode(text));
+        target.classList.add('icon-label');
+      }
+
+      function setCoinDisplay(target, value, prefix = '') {
+        if (!target) return;
+        target.replaceChildren(document.createTextNode(`${prefix}${value}`), createCoinImage());
+      }
+
+      function setShopButtonContent(button, state) {
+        button.replaceChildren();
+        if (state.icon === 'coin-buy') button.appendChild(createCoinImage());
+        else if (state.icon) button.appendChild(createUiIcon(state.icon));
+        button.appendChild(document.createTextNode(state.text));
+      }
+
+      function updateCoinDisplays() {
+        setCoinDisplay(el.coinsCount, coins);
+        setCoinDisplay(el.menuCoins, coins);
+        setCoinDisplay(el.levelsCoins, coins);
+        setCoinDisplay(el.shopCoins, coins);
+      }
+
+      function showGame() {
+        hidePrimaryScreens();
+        el.gameScreen.classList.remove('hidden');
+        startBackgroundMusic();
+      }
+
+      function showMenu() {
+        selected = null;
+        locked = false;
+        cleanupPourEngine();
+        stopWinEffects();
+        closeWinModal();
+        hidePrimaryScreens();
+        el.menuScreen.classList.remove('hidden');
+        updateMenuProgress();
+      }
+
+      function showLevelSelect() {
+        selected = null;
+        locked = false;
+        cleanupPourEngine();
+        stopWinEffects();
+        closeWinModal();
+        hidePrimaryScreens();
+        el.levelsScreen.classList.remove('hidden');
+        renderLevelSelect();
+      }
+
+      function showShop() {
+        selected = null;
+        locked = false;
+        cleanupPourEngine();
+        stopWinEffects();
+        closeWinModal();
+        hidePrimaryScreens();
+        el.shopScreen.classList.remove('hidden');
+        renderShop();
+      }
+
+      function updateMenuProgress() {
+        const done = completedLevels.size;
+        if (el.playBtn) el.playBtn.textContent = currentLevel === 0 && done === 0 ? 'Играть' : `Продолжить · ${currentLevel + 1}`;
+        updateCoinDisplays();
+      }
+
+      function renderLevelSelect() {
+        const unlocked = getUnlockedIndex();
+        const done = completedLevels.size;
+        el.levelsProgressText.textContent = `Пройдено ${done} из ${LEVELS.length}`;
+        el.levelsProgressFill.style.width = `${(done / LEVELS.length) * 100}%`;
+        updateCoinDisplays();
+        el.levelGrid.replaceChildren();
+
+        LEVELS.forEach((_, index) => {
+          const button = document.createElement('button');
+          const complete = completedLevels.has(index);
+          const isLocked = index > unlocked;
+          button.className = 'level-tile';
+          if (complete) button.classList.add('completed');
+          if (index === currentLevel) button.classList.add('current');
+          button.disabled = isLocked;
+          button.setAttribute('aria-label', isLocked ? `Уровень ${index + 1}, закрыт` : `Уровень ${index + 1}`);
+
+          const number = document.createElement('span');
+          number.className = 'level-index';
+          number.textContent = index + 1;
+          const detail = document.createElement('span');
+          detail.className = 'level-detail';
+          const best = Number(safeStorageGet(`colorSortBest_${index}`) || 0);
+          detail.textContent = complete ? (best ? `${best} ход.` : 'пройден') : (isLocked ? 'закрыт' : 'доступен');
+          button.append(number, detail);
+          if (isLocked) {
+            const lock = document.createElement('span');
+            lock.className = 'level-lock';
+            lock.appendChild(createUiIcon('lock'));
+            button.appendChild(lock);
+          } else {
+            button.addEventListener('click', () => {
+              extraBottleActive = false;
+              initLevel(index);
+            });
+          }
+          el.levelGrid.appendChild(button);
+        });
+      }
+
+      function shopButtonState(item, owned, equipped) {
+        if (equipped) return { text: 'Выбрано', icon: 'check', className: 'shop-buy equipped', disabled: true };
+        if (owned) return { text: 'Выбрать', icon: '', className: 'shop-buy', disabled: false };
+        return { text: `${item.price} · Купить`, icon: 'coin-buy', className: 'shop-buy buyable', disabled: false };
+      }
+
+      function createShopCard(item, type) {
+        const ownedSet = type === 'theme' ? ownedThemes : ownedGlass;
+        const equipped = type === 'theme' ? equippedTheme === item.id : equippedGlass === item.id;
+        const card = document.createElement('div');
+        card.className = 'shop-card';
+        card.dataset.shopType = type;
+        card.dataset.shopId = item.id;
+        const preview = document.createElement('div');
+        preview.className = 'shop-preview';
+        if (type === 'theme') preview.style.background = item.preview;
+        else {
+          preview.style.background = 'linear-gradient(145deg,rgba(82,108,154,.28),rgba(6,15,29,.72))';
+          preview.style.setProperty('--preview-glass', item.glass);
+        }
+        const name = document.createElement('div');
+        name.className = 'shop-name';
+        name.textContent = item.name;
+        const desc = document.createElement('div');
+        desc.className = 'shop-desc';
+        desc.textContent = item.desc;
+        const button = document.createElement('button');
+        const state = shopButtonState(item, ownedSet.has(item.id), equipped);
+        button.className = state.className;
+        setShopButtonContent(button, state);
+        button.disabled = state.disabled;
+        if (!state.disabled) button.addEventListener('click', () => buyOrEquipShopItem(type, item.id));
+
+        const startPreview = () => {
+          previewShopItem(type, item.id);
+          card.classList.add('shop-previewing');
+        };
+        const endPreview = () => {
+          card.classList.remove('shop-previewing');
+          applyCosmetics();
+        };
+        card.addEventListener('pointerenter', event => {
+          if (event.pointerType === 'mouse' || event.pointerType === 'pen') startPreview();
+        });
+        card.addEventListener('pointerleave', event => {
+          if (event.pointerType === 'mouse' || event.pointerType === 'pen') endPreview();
+        });
+        card.addEventListener('focusin', startPreview);
+        card.addEventListener('focusout', event => {
+          if (!card.contains(event.relatedTarget)) endPreview();
+        });
+
+        card.append(preview, name, desc, button);
+        return card;
+      }
+
+      function renderShop() {
+        updateCoinDisplays();
+        el.themeShopGrid.replaceChildren();
+        el.glassShopGrid.replaceChildren();
+        THEME_ITEMS.forEach(item => el.themeShopGrid.appendChild(createShopCard(item, 'theme')));
+        GLASS_ITEMS.forEach(item => el.glassShopGrid.appendChild(createShopCard(item, 'glass')));
+      }
+
+      function buyOrEquipShopItem(type, id) {
+        const items = type === 'theme' ? THEME_ITEMS : GLASS_ITEMS;
+        const ownedSet = type === 'theme' ? ownedThemes : ownedGlass;
+        const item = items.find(candidate => candidate.id === id);
+        if (!item) return;
+
+        const wasOwned = ownedSet.has(id);
+        if (!wasOwned) {
+          if (coins < item.price) {
+            showToast(`Не хватает ${item.price - coins} монет`);
+            playTone(150, .07, .025);
+            return;
+          }
+          coins -= item.price;
+          ownedSet.add(id);
+          playTone(660, .08, .028);
+          setTimeout(() => playTone(880, .12, .022), 80);
+          showToast(`${item.name}: куплено и применено`);
+        } else {
+          playTone(520, .06, .022);
+          showToast(`${item.name}: выбрано`);
+        }
+
+        if (type === 'theme') equippedTheme = id;
+        else equippedGlass = id;
+        applyCosmetics();
+        persistLocalProgress();
+        renderShop();
+        pulseShopCard(type, id);
+      }
+
+      function isBottleComplete(bottle) {
+        return bottle.length === CAPACITY && bottle.every(v => v === bottle[0]);
+      }
+
+      function completedCount() {
+        return bottles.filter(isBottleComplete).length;
+      }
+
+      function isWin() {
+        return bottles.every(b => b.length === 0 || isBottleComplete(b));
+      }
+
+      function getTopRunCount(bottle) {
+        if (!bottle.length) return 0;
+        const top = bottle[bottle.length - 1];
+        let count = 1;
+        for (let i = bottle.length - 2; i >= 0 && bottle[i] === top; i--) count++;
+        return count;
+      }
+
+      function getPourAmount(from, to) {
+        const source = bottles[from];
+        const target = bottles[to];
+        return Math.min(getTopRunCount(source), CAPACITY - target.length);
+      }
+
+      function canPour(from, to) {
+        if (from === to) return false;
+        const source = bottles[from];
+        const target = bottles[to];
+        if (!source.length || target.length >= CAPACITY) return false;
+        if (!target.length) return true;
+        return source[source.length - 1] === target[target.length - 1];
+      }
+
+      function performPour(from, to) {
+        const source = bottles[from];
+        const target = bottles[to];
+        const amount = getPourAmount(from, to);
+        if (amount <= 0) return false;
+
+        history.push({ state: cloneState(bottles), moves });
+        for (let i = 0; i < amount; i++) target.push(source.pop());
+        if (isBottleComplete(target)) completionFeedbackIndex = to;
+        moves++;
+        selected = null;
+        hintMove = null;
+        clearTimeout(hintTimer);
+        persistLocalProgress();
+        return true;
+      }
+
+      function createBottleContent(bottle) {
+        const fragment = document.createDocumentFragment();
+        const neck = document.createElement('div');
+        neck.className = 'bottle-neck';
+        const body = document.createElement('div');
+        body.className = 'bottle-body';
+
+        bottle.forEach((colorIndex, layerIndex) => {
+          const layer = document.createElement('div');
+          layer.className = 'liquid-layer';
+          if (layerIndex === bottle.length - 1) layer.classList.add('top-liquid');
+          layer.style.setProperty('--index', layerIndex);
+          layer.style.setProperty('--color', COLORS[colorIndex]);
+          body.appendChild(layer);
+        });
+
+        fragment.append(neck, body);
+        return fragment;
+      }
+
+      function getBottleTemplate(slotEl, slotRect) {
+        const neckRect = slotEl.querySelector('.bottle-neck').getBoundingClientRect();
+        const bodyRect = slotEl.querySelector('.bottle-body').getBoundingClientRect();
+        return {
+          width: slotRect.width,
+          height: slotRect.height,
+          pivot: {
+            x: neckRect.left - slotRect.left + neckRect.width / 2,
+            y: neckRect.top - slotRect.top + 5
+          },
+          body: {
+            x: bodyRect.left - slotRect.left,
+            y: bodyRect.top - slotRect.top,
+            w: bodyRect.width,
+            h: bodyRect.height
+          }
+        };
+      }
+
+      function createGlassClone(slotEl, rect, template) {
+        const clone = slotEl.cloneNode(true);
+        clone.classList.remove('selected', 'locked', 'shake', 'bottle-complete', 'valid-target', 'just-completed', 'hint-source', 'hint-target');
+        clone.classList.add('animation-glass');
+        clone.removeAttribute('data-index');
+        clone.querySelectorAll('.liquid-layer').forEach(node => node.remove());
+        clone.style.left = `${rect.left}px`;
+        clone.style.top = `${rect.top}px`;
+        clone.style.width = `${rect.width}px`;
+        clone.style.height = `${rect.height}px`;
+        clone.style.transformOrigin = `${template.pivot.x}px ${template.pivot.y}px`;
+        clone.style.transform = 'rotate(0deg)';
+        document.body.appendChild(clone);
+        return clone;
+      }
+
+      function createPourCanvas(extraClass = '') {
+        const canvas = document.createElement('canvas');
+        canvas.className = `pour-canvas${extraClass ? ` ${extraClass}` : ''}`;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.round(window.innerWidth * dpr);
+        canvas.height = Math.round(window.innerHeight * dpr);
+        canvas.style.width = `${window.innerWidth}px`;
+        canvas.style.height = `${window.innerHeight}px`;
+        document.body.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { canvas, ctx, dpr };
+      }
+
+      function roundedRectPath(ctx, x, y, w, h, radius) {
+        const r = Math.max(0, Math.min(radius, w / 2, h / 2));
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+      }
+
+      function rotatePoint(x, y, cx, cy, angle) {
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const dx = x - cx;
+        const dy = y - cy;
+        return {
+          x: cx + dx * cos - dy * sin,
+          y: cy + dx * sin + dy * cos
+        };
+      }
+
+      function bottleBottomOffsetAtAngle(template, angle) {
+        const corners = [
+          [0, 0],
+          [template.width, 0],
+          [template.width, template.height],
+          [0, template.height]
+        ];
+        let maxY = -Infinity;
+        corners.forEach(([x, y]) => {
+          const point = rotatePoint(x, y, template.pivot.x, template.pivot.y, angle);
+          maxY = Math.max(maxY, point.y - template.pivot.y);
+        });
+        return maxY;
+      }
+
+      function toLiquidSegments(values) {
+        const segments = [];
+        values.forEach(color => {
+          const last = segments[segments.length - 1];
+          if (last && last.color === color) last.amount += 1;
+          else segments.push({ color, amount: 1 });
+        });
+        return segments;
+      }
+
+      function sourceSegmentsAt(values, transferred) {
+        const segments = toLiquidSegments(values);
+        if (!segments.length || transferred <= 0) return segments;
+        segments[segments.length - 1].amount -= transferred;
+        if (segments[segments.length - 1].amount <= .0001) segments.pop();
+        return segments;
+      }
+
+      function targetSegmentsAt(values, color, transferred) {
+        const segments = toLiquidSegments(values);
+        if (transferred <= 0) return segments;
+        const last = segments[segments.length - 1];
+        if (last && last.color === color) last.amount += transferred;
+        else segments.push({ color, amount: transferred });
+        return segments;
+      }
+
+      function drawLiquidInBottle(ctx, dpr, template, pose, segments, angle = 0) {
+        const inset = 5;
+        const body = {
+          x: pose.left + template.body.x + inset,
+          y: pose.top + template.body.y + inset,
+          w: Math.max(1, template.body.w - inset * 2),
+          h: Math.max(1, template.body.h - inset * 2)
+        };
+        const pivotX = pose.left + template.pivot.x;
+        const pivotY = pose.top + template.pivot.y;
+
+        ctx.save();
+        ctx.translate(pivotX, pivotY);
+        ctx.rotate(angle);
+        ctx.translate(-pivotX, -pivotY);
+        roundedRectPath(ctx, body.x, body.y, body.w, body.h, Math.min(16, body.w * .2));
+        ctx.clip();
+
+        const corners = [
+          rotatePoint(body.x, body.y, pivotX, pivotY, angle),
+          rotatePoint(body.x + body.w, body.y, pivotX, pivotY, angle),
+          rotatePoint(body.x + body.w, body.y + body.h, pivotX, pivotY, angle),
+          rotatePoint(body.x, body.y + body.h, pivotX, pivotY, angle)
+        ];
+        const minX = Math.min(...corners.map(p => p.x));
+        const maxX = Math.max(...corners.map(p => p.x));
+        const minY = Math.min(...corners.map(p => p.y));
+        const maxY = Math.max(...corners.map(p => p.y));
+        const unitH = (maxY - minY) / CAPACITY;
+
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        let bottomY = maxY;
+        segments.forEach((segment, index) => {
+          const h = Math.max(0, unitH * segment.amount);
+          const topY = bottomY - h;
+          const gradient = ctx.createLinearGradient(0, topY, 0, bottomY);
+          gradient.addColorStop(0, COLORS[segment.color]);
+          gradient.addColorStop(.28, COLORS[segment.color]);
+          gradient.addColorStop(1, COLORS[segment.color]);
+          ctx.fillStyle = gradient;
+          ctx.fillRect(minX - 20, topY, maxX - minX + 40, h + .8);
+          if (index === segments.length - 1 && h > 2) {
+            const surfaceW = maxX - minX + 18;
+            const surfaceX = minX - 9;
+            const surfaceH = Math.min(5.5, Math.max(2.4, h * .12));
+            const surfaceGradient = ctx.createLinearGradient(surfaceX, 0, surfaceX + surfaceW, 0);
+            surfaceGradient.addColorStop(0, 'rgba(255,255,255,.08)');
+            surfaceGradient.addColorStop(.48, 'rgba(255,255,255,.34)');
+            surfaceGradient.addColorStop(1, 'rgba(255,255,255,.10)');
+            ctx.fillStyle = surfaceGradient;
+            ctx.beginPath();
+            ctx.ellipse(surfaceX + surfaceW / 2, topY + surfaceH * .35, surfaceW / 2, surfaceH / 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          bottomY = topY;
+        });
+        ctx.restore();
+      }
+
+      function drawPourStream(ctx, start, end, color, alpha, progress) {
+        if (alpha <= .001) return;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.lineCap = 'round';
+        const gradient = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(.55, color);
+        gradient.addColorStop(1, color);
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 9;
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y + 1);
+        const bend = Math.max(14, Math.abs(end.y - start.y) * .38);
+        ctx.bezierCurveTo(start.x, start.y + bend, end.x, end.y - bend * .55, end.x, end.y - 1);
+        ctx.stroke();
+
+        ctx.globalAlpha = alpha * .28;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(start.x - 1.5, start.y + 3);
+        ctx.bezierCurveTo(start.x - 1, start.y + bend, end.x - 1, end.y - bend * .55, end.x - 1, end.y - 2);
+        ctx.stroke();
+
+        const dropletPhase = (progress * 4.3) % 1;
+        const dropY = lerp(start.y + 6, end.y - 4, dropletPhase);
+        const dropX = lerp(start.x, end.x, dropletPhase);
+        ctx.globalAlpha = alpha * (1 - Math.abs(.5 - dropletPhase) * .7);
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(dropX, dropY, 3.7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function describeBottle(index, bottle) {
+        if (!bottle.length) return `Бутылка ${index + 1}, пустая`;
+        const topColor = COLOR_NAMES[bottle[bottle.length - 1]] || 'цвет';
+        if (isBottleComplete(bottle)) return `Бутылка ${index + 1}, готова: ${topColor}, 4 из 4`;
+        return `Бутылка ${index + 1}, заполнено ${bottle.length} из ${CAPACITY}, сверху ${topColor}`;
+      }
+
+      function getBottleButtons() {
+        return Array.from(el.board.querySelectorAll('.bottle-slot'));
+      }
+
+      function focusBottle(index) {
+        const buttons = getBottleButtons();
+        const button = buttons[index];
+        if (!button || button.disabled) return false;
+        button.focus({ preventScroll: true });
+        return true;
+      }
+
+      function focusBottleSpatial(direction) {
+        const buttons = getBottleButtons().filter(button => !button.disabled);
+        if (!buttons.length) return;
+        const active = document.activeElement;
+        const current = active && active.classList && active.classList.contains('bottle-slot') ? active : buttons[0];
+        const a = current.getBoundingClientRect();
+        const ax = a.left + a.width / 2;
+        const ay = a.top + a.height / 2;
+        let best = null;
+        let bestScore = Infinity;
+        for (const candidate of buttons) {
+          if (candidate === current) continue;
+          const r = candidate.getBoundingClientRect();
+          const dx = r.left + r.width / 2 - ax;
+          const dy = r.top + r.height / 2 - ay;
+          if (direction === 'left' && dx >= -1) continue;
+          if (direction === 'right' && dx <= 1) continue;
+          if (direction === 'up' && dy >= -1) continue;
+          if (direction === 'down' && dy <= 1) continue;
+          const primary = direction === 'left' || direction === 'right' ? Math.abs(dx) : Math.abs(dy);
+          const secondary = direction === 'left' || direction === 'right' ? Math.abs(dy) : Math.abs(dx);
+          const score = primary + secondary * 2.25;
+          if (score < bestScore) { bestScore = score; best = candidate; }
+        }
+        if (best) best.focus({ preventScroll: true });
+      }
+
+      function render()
+      {
+        const activeBottleIndex = document.activeElement?.classList?.contains('bottle-slot')
+          ? Number(document.activeElement.dataset.index)
+          : null;
+
+        el.levelNumber.textContent = `${currentLevel + 1} / ${LEVELS.length}`;
+        el.movesCount.textContent = String(moves);
+        el.completedCount.textContent = String(completedCount());
+        updateCoinDisplays();
+
+        const blocked = isInteractionBlocked();
+        el.undoBtn.disabled = history.length === 0 || locked || blocked;
+        el.undoBtn.title = history.length === 0 ? 'Нет ходов для отмены' : 'Отменить последний ход';
+        el.restartBtn.disabled = locked || blocked;
+        el.restartBtn.title = el.restartBtn.disabled ? 'Дождитесь окончания действия' : 'Начать уровень заново';
+        el.hintBtn.disabled = locked || blocked || Boolean(hintMove) || coins < HINT_COST || isWin();
+        el.hintBtn.title = hintMove ? 'Подсказка уже показана' : (coins < HINT_COST ? `Нужно ${HINT_COST} монет` : 'Показать полезный ход');
+        el.hintBtn.setAttribute('aria-label', el.hintBtn.title);
+        el.extraBottleBtn.disabled = locked || blocked || extraBottleActive || isWin();
+        el.extraBottleBtn.querySelector('.cost').textContent = extraBottleActive ? 'получена' : '+1 бутылка';
+        setIconLabel(el.extraBottleBtn.querySelector('span:first-child'), extraBottleActive ? 'bottle' : 'video', extraBottleActive ? 'Доп. бутылка' : 'Смотреть рекламу');
+        const extraLabel = extraBottleActive
+          ? 'Дополнительная бутылка уже получена'
+          : 'Посмотреть рекламу и получить дополнительную пустую бутылку';
+        el.extraBottleBtn.title = extraLabel;
+        el.extraBottleBtn.setAttribute('aria-label', extraLabel);
+        setIconButton(el.soundBtn, sfxOn ? 'sound' : 'muted');
+        setIconButton(el.musicBtn, musicOn ? 'music' : 'music-off');
+        syncAudioButtons();
+
+        el.board.replaceChildren();
+        bottles.forEach((bottle, index) => {
+          const slot = document.createElement('button');
+          slot.type = 'button';
+          slot.className = 'bottle-slot';
+          slot.dataset.index = index;
+          slot.disabled = locked || blocked;
+          let label = describeBottle(index, bottle);
+          const validTarget = selected !== null && selected !== index && canPour(selected, index);
+          if (selected === index) label += ', выбрана';
+          if (validTarget) label += ', допустимая цель для переливания';
+          if (hintMove?.from === index) label += ', подсказка: выбрать первой';
+          if (hintMove?.to === index) label += ', подсказка: выбрать второй';
+          slot.setAttribute('aria-label', label);
+          slot.setAttribute('aria-pressed', String(selected === index));
+          if (selected === index) slot.classList.add('selected');
+          if (validTarget) slot.classList.add('valid-target');
+          if (locked || blocked) slot.classList.add('locked');
+          if (isBottleComplete(bottle)) slot.classList.add('bottle-complete');
+          if (completionFeedbackIndex === index) slot.classList.add('just-completed');
+          if (hintMove?.from === index) slot.classList.add('hint-source');
+          if (hintMove?.to === index) slot.classList.add('hint-target');
+          slot.appendChild(createBottleContent(bottle));
+          slot.addEventListener('click', () => onBottleClick(index));
+          el.board.appendChild(slot);
+        });
+
+        const tutorialActive = currentLevel < 3 && !completedLevels.has(currentLevel);
+        el.hint.classList.toggle('tutorial-hint', tutorialActive && !hintMove);
+        if (hintMove) {
+          el.hint.textContent = `Подсказка: сначала бутылка ${hintMove.from + 1}, затем бутылка ${hintMove.to + 1}.`;
+        } else if (tutorialActive && currentLevel === 0) {
+          el.hint.textContent = selected === null
+            ? 'Шаг 1 из 2: выбери непустую бутылку.'
+            : 'Шаг 2 из 2: выбери подсвеченную бутылку — переливать можно в пустую или на такой же верхний цвет.';
+        } else if (tutorialActive && currentLevel === 1 && moves < 2) {
+          el.hint.textContent = selected === null
+            ? 'Подсвеченные цели показывают, куда можно сделать корректный ход.'
+            : 'Выбери одну из мягко подсвеченных целей для переливания.';
+        } else if (tutorialActive && currentLevel === 2 && moves < 2) {
+          el.hint.textContent = selected === null
+            ? 'Цель: собрать в каждой непустой бутылке четыре одинаковых цвета.'
+            : 'Продолжай собирать одинаковые цвета — допустимые цели подсвечены.';
+        } else {
+          el.hint.textContent = selected === null
+            ? 'Выбери бутылку, из которой хочешь перелить цвет.'
+            : `Бутылка ${selected + 1} выбрана. Подсвечены все допустимые цели.`;
+        }
+
+        if (Number.isInteger(activeBottleIndex) && !locked && !blocked) {
+          requestAnimationFrame(() => focusBottle(activeBottleIndex));
+        }
+      }
+
+      function onBottleClick(index) {
+        if (locked || isInteractionBlocked()) return;
+        const bottle = bottles[index];
+
+        if (selected === null) {
+          if (!bottle.length || isBottleComplete(bottle)) {
+            rejectBottle(index);
+            return;
+          }
+          selected = index;
+          playTone(440, .045, .035);
+          render();
+          return;
+        }
+
+        if (selected === index) {
+          selected = null;
+          render();
+          return;
+        }
+
+        if (!canPour(selected, index)) {
+          if (bottle.length && !isBottleComplete(bottle)) {
+            selected = index;
+            playTone(390, .04, .025);
+            render();
+          } else {
+            rejectBottle(index);
+          }
+          return;
+        }
+
+        animatePour(selected, index);
+      }
+
+      function animatePour(from, to) {
+        locked = true;
+        el.hint.textContent = 'Переливаем…';
+        getBottleButtons().forEach(button => { button.disabled = true; button.classList.add('locked'); });
+        const sourceEl = el.board.querySelector(`[data-index="${from}"]`);
+        const targetEl = el.board.querySelector(`[data-index="${to}"]`);
+        if (!sourceEl || !targetEl) {
+          locked = false;
+          return;
+        }
+
+        const selectedRect = sourceEl.getBoundingClientRect();
+        sourceEl.classList.remove('selected');
+        const sourceRect = sourceEl.getBoundingClientRect();
+        const targetRect = targetEl.getBoundingClientRect();
+        const sourceTemplate = getBottleTemplate(sourceEl, sourceRect);
+        const targetTemplate = getBottleTemplate(targetEl, targetRect);
+
+        const sourceBefore = [...bottles[from]];
+        const targetBefore = [...bottles[to]];
+        const pourColorIndex = sourceBefore[sourceBefore.length - 1];
+        const pourColor = COLORS[pourColorIndex];
+        const amount = getPourAmount(from, to);
+        const direction = targetRect.left >= sourceRect.left ? 1 : -1;
+        const maxAngle = direction > 0 ? Math.PI * .36 : -Math.PI * .36;
+
+        const startPivot = {
+          x: selectedRect.left + sourceTemplate.pivot.x,
+          y: selectedRect.top + sourceTemplate.pivot.y
+        };
+        const finalPivot = {
+          x: sourceRect.left + sourceTemplate.pivot.x,
+          y: sourceRect.top + sourceTemplate.pivot.y
+        };
+        const targetPivot = {
+          x: targetRect.left + targetTemplate.pivot.x,
+          y: targetRect.top + targetTemplate.pivot.y
+        };
+        const sameRowTop = Math.min(...Array.from(el.board.querySelectorAll('.bottle-slot'))
+          .map(node => node.getBoundingClientRect())
+          .filter(rect => Math.abs(rect.top - targetRect.top) < targetRect.height * .45)
+          .map(rect => rect.top));
+        const rotatedBottomOffset = bottleBottomOffsetAtAngle(sourceTemplate, maxAngle);
+        const naturalGoalY = targetPivot.y - Math.max(66, targetRect.height * .36);
+        const collisionSafeGoalY = sameRowTop - 14 - rotatedBottomOffset;
+        const goalPivot = {
+          x: targetPivot.x - direction * Math.max(10, targetRect.width * .16),
+          y: Math.max(24 + sourceTemplate.pivot.y, Math.min(naturalGoalY, collisionSafeGoalY))
+        };
+        const clearanceY = Math.max(
+          24 + sourceTemplate.pivot.y,
+          Math.min(startPivot.y, goalPivot.y) - Math.min(82, sourceRect.height * .34)
+        );
+
+        const sourceGlass = createGlassClone(sourceEl, selectedRect, sourceTemplate);
+        const targetGlass = createGlassClone(targetEl, targetRect, targetTemplate);
+        const { canvas, ctx, dpr } = createPourCanvas();
+        const { canvas: streamCanvas, ctx: streamCtx } = createPourCanvas('stream-layer');
+        sourceEl.style.visibility = 'hidden';
+        targetEl.style.visibility = 'hidden';
+
+        const durations = {
+          lift: 130,
+          cross: 250,
+          lower: 115,
+          tilt: 175,
+          pour: 260 + amount * 105,
+          untilt: 150,
+          rise: 105,
+          back: 245,
+          settle: 135
+        };
+        const marks = {};
+        let cursor = 0;
+        Object.entries(durations).forEach(([key, value]) => {
+          marks[key] = [cursor, cursor + value];
+          cursor += value;
+        });
+        const totalDuration = cursor;
+        const engine = {
+          canvas, streamCanvas, ctx, streamCtx, dpr, sourceEl, targetEl, sourceGlass, targetGlass,
+          raf: 0, completed: false
+        };
+        activePourEngine = engine;
+        const startTime = performance.now();
+
+        playTone(510, .055, .025);
+
+        function phase(now, name, easing = easeInOutCubic) {
+          const [a, b] = marks[name];
+          return easing((now - a) / (b - a));
+        }
+
+        function frame(timestamp) {
+          if (activePourEngine !== engine) return;
+          const elapsed = Math.min(totalDuration, timestamp - startTime);
+          let pivot = { ...startPivot };
+          let angle = 0;
+          let transferred = 0;
+          let streamAlpha = 0;
+          let streamProgress = 0;
+
+          if (elapsed <= marks.lift[1]) {
+            const p = phase(elapsed, 'lift', easeOutCubic);
+            pivot.y = lerp(startPivot.y, clearanceY, p);
+          } else if (elapsed <= marks.cross[1]) {
+            const p = phase(elapsed, 'cross');
+            pivot.x = lerp(startPivot.x, goalPivot.x, p);
+            pivot.y = clearanceY;
+          } else if (elapsed <= marks.lower[1]) {
+            const p = phase(elapsed, 'lower', easeOutCubic);
+            pivot.x = goalPivot.x;
+            pivot.y = lerp(clearanceY, goalPivot.y, p);
+          } else if (elapsed <= marks.tilt[1]) {
+            const p = phase(elapsed, 'tilt');
+            pivot = { ...goalPivot };
+            angle = lerp(0, maxAngle, p);
+          } else if (elapsed <= marks.pour[1]) {
+            const p = phase(elapsed, 'pour');
+            pivot = { ...goalPivot };
+            angle = maxAngle;
+            transferred = amount * p;
+            streamProgress = p;
+            streamAlpha = Math.min(1, p * 7, (1 - p) * 8 + .08);
+          } else if (elapsed <= marks.untilt[1]) {
+            const p = phase(elapsed, 'untilt');
+            pivot = { ...goalPivot };
+            angle = lerp(maxAngle, 0, p);
+            transferred = amount;
+          } else if (elapsed <= marks.rise[1]) {
+            const p = phase(elapsed, 'rise', easeOutCubic);
+            pivot.x = goalPivot.x;
+            pivot.y = lerp(goalPivot.y, clearanceY, p);
+            transferred = amount;
+          } else if (elapsed <= marks.back[1]) {
+            const p = phase(elapsed, 'back');
+            pivot.x = lerp(goalPivot.x, finalPivot.x, p);
+            pivot.y = clearanceY;
+            transferred = amount;
+          } else {
+            const p = phase(elapsed, 'settle', easeOutCubic);
+            pivot.x = finalPivot.x;
+            pivot.y = lerp(clearanceY, finalPivot.y, p);
+            transferred = amount;
+          }
+
+          const sourcePose = {
+            left: pivot.x - sourceTemplate.pivot.x,
+            top: pivot.y - sourceTemplate.pivot.y
+          };
+          const targetPose = { left: targetRect.left, top: targetRect.top };
+
+          sourceGlass.style.left = `${sourcePose.left}px`;
+          sourceGlass.style.top = `${sourcePose.top}px`;
+          sourceGlass.style.transform = `rotate(${angle * 180 / Math.PI}deg)`;
+
+          ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+          streamCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+          drawLiquidInBottle(
+            ctx, dpr, targetTemplate, targetPose,
+            targetSegmentsAt(targetBefore, pourColorIndex, transferred), 0
+          );
+          drawLiquidInBottle(
+            ctx, dpr, sourceTemplate, sourcePose,
+            sourceSegmentsAt(sourceBefore, transferred), angle
+          );
+
+          if (streamAlpha > 0) {
+            drawPourStream(streamCtx, pivot, targetPivot, pourColor, streamAlpha, streamProgress);
+          }
+
+          if (elapsed < totalDuration) {
+            engine.raf = requestAnimationFrame(frame);
+            return;
+          }
+
+          if (!engine.completed) {
+            engine.completed = true;
+            performPour(from, to);
+            playTone(690, .07, .028);
+          }
+          cleanupPourEngine();
+          locked = false;
+          render();
+          if (completionFeedbackIndex !== null) {
+            const completedIndex = completionFeedbackIndex;
+            completionFeedbackIndex = null;
+            requestAnimationFrame(() => {
+              const node = el.board.querySelector(`[data-index="${completedIndex}"]`);
+              if (node) node.classList.add('just-completed');
+            });
+          }
+          if (isWin()) setTimeout(showWin, 260);
+        }
+
+        engine.raf = requestAnimationFrame(frame);
+      }
+
+      function rejectBottle(index) {
+        const bottleEl = el.board.querySelector(`[data-index="${index}"]`);
+        if (bottleEl) {
+          bottleEl.classList.remove('shake');
+          void bottleEl.offsetWidth;
+          bottleEl.classList.add('shake');
+        }
+        playTone(160, .06, .028);
+      }
+
+      function undo() {
+        if (locked || isInteractionBlocked() || !history.length) return;
+        const prev = history.pop();
+        bottles = cloneState(prev.state);
+        moves = prev.moves;
+        selected = null;
+        completionFeedbackIndex = null;
+        persistLocalProgress();
+        playTone(300, .05, .025);
+        render();
+      }
+
+      function restart() {
+        if (locked || isInteractionBlocked()) return;
+        initLevel(currentLevel, false, true);
+        showToast('Уровень начат заново');
+      }
+
+      function stateIsSolved(state) {
+        return state.every(bottle => bottle.length === 0 || (bottle.length === CAPACITY && bottle.every(v => v === bottle[0])));
+      }
+
+      function stateTopRun(bottle) {
+        if (!bottle.length) return 0;
+        const color = bottle[bottle.length - 1];
+        let count = 1;
+        for (let i = bottle.length - 2; i >= 0 && bottle[i] === color; i--) count++;
+        return count;
+      }
+
+      function stateMove(state, from, to) {
+        const next = state.map(b => [...b]);
+        const source = next[from];
+        const target = next[to];
+        const amount = Math.min(stateTopRun(source), CAPACITY - target.length);
+        for (let i = 0; i < amount; i++) target.push(source.pop());
+        return { next, amount };
+      }
+
+      function getLegalMoves(state) {
+        const result = [];
+        for (let from = 0; from < state.length; from++) {
+          const source = state[from];
+          if (!source.length) continue;
+          if (source.length === CAPACITY && source.every(v => v === source[0])) continue;
+          const color = source[source.length - 1];
+          const run = stateTopRun(source);
+          const sourceUniform = run === source.length;
+          for (let to = 0; to < state.length; to++) {
+            if (from === to) continue;
+            const target = state[to];
+            if (target.length >= CAPACITY) continue;
+            if (target.length && target[target.length - 1] !== color) continue;
+            if (!target.length && sourceUniform) continue; // симметричный бессмысленный перелив
+            const amount = Math.min(run, CAPACITY - target.length);
+            if (!amount) continue;
+            let score = 0;
+            if (target.length) score += 90;
+            if (target.length + amount === CAPACITY) score += 130;
+            if (source.length === amount) score += 35;
+            if (!target.length) score -= 18;
+            score += amount * 7;
+            result.push({ from, to, score });
+          }
+        }
+        result.sort((a, b) => b.score - a.score);
+        return result;
+      }
+
+      function canonicalState(state) {
+        return state.map(b => b.join('')).sort().join('|');
+      }
+
+      function findHintMove(state) {
+        const start = performance.now();
+        const deadline = start + 220;
+        const rootMoves = getLegalMoves(state);
+        if (!rootMoves.length) return null;
+
+        // Ограниченный DFS: обычно находит настоящий путь решения; при тяжёлом состоянии
+        // ниже остаётся безопасный эвристический ход вместо подвисания интерфейса.
+        const seen = new Map();
+        function dfs(current, depth, firstMove) {
+          if (performance.now() > deadline) return null;
+          if (stateIsSolved(current)) return firstMove;
+          if (depth <= 0) return null;
+          const key = canonicalState(current);
+          const prevDepth = seen.get(key);
+          if (prevDepth != null && prevDepth >= depth) return null;
+          seen.set(key, depth);
+          const movesList = getLegalMoves(current);
+          for (const move of movesList) {
+            const { next } = stateMove(current, move.from, move.to);
+            const found = dfs(next, depth - 1, firstMove || move);
+            if (found) return found;
+            if (performance.now() > deadline) return null;
+          }
+          return null;
+        }
+
+        for (let depth = 6; depth <= 26 && performance.now() <= deadline; depth += 4) {
+          seen.clear();
+          const found = dfs(state.map(b => [...b]), depth, null);
+          if (found) return found;
+        }
+        return rootMoves[0];
+      }
+
+      function useHint() {
+        if (locked || isInteractionBlocked() || hintMove) return;
+        if (coins < HINT_COST) {
+          showToast(`Нужно ${HINT_COST} монет для подсказки`);
+          playTone(150, .07, .025);
+          return;
+        }
+        const move = findHintMove(bottles);
+        if (!move) {
+          showToast('Сейчас нет доступного полезного хода');
+          return;
+        }
+        coins -= HINT_COST;
+        hintMove = { from: move.from, to: move.to };
+        selected = null;
+        persistLocalProgress();
+        render();
+        playTone(880, .08, .026);
+        setTimeout(() => playTone(1175, .11, .022), 85);
+        showToast(`Подсказка: сначала бутылка ${move.from + 1}, затем бутылка ${move.to + 1}`);
+        clearTimeout(hintTimer);
+        hintTimer = setTimeout(() => {
+          hintMove = null;
+          if (!locked) render();
+        }, 4200);
+      }
+
+      function grantRewardExtraBottle() {
+        if (extraBottleActive) return;
+        extraBottleActive = true;
+        bottles.push([]);
+        selected = null;
+        hintMove = null;
+        persistLocalProgress();
+        render();
+        playTone(620, .08, .03);
+        setTimeout(() => playTone(830, .12, .028), 80);
+        showToast('Дополнительная бутылка получена!');
+      }
+
+      function withTimeout(promise, timeoutMs, label) {
+        return new Promise((resolve, reject) => {
+          let settled = false;
+          const timer = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            reject(new Error(`${label}: timeout`));
+          }, timeoutMs);
+          Promise.resolve(promise).then(
+            value => {
+              if (settled) return;
+              settled = true;
+              clearTimeout(timer);
+              resolve(value);
+            },
+            error => {
+              if (settled) return;
+              settled = true;
+              clearTimeout(timer);
+              reject(error);
+            }
+          );
+        });
+      }
+
+      function setAdBusy(value) {
+        adBusy = Boolean(value);
+        syncInteractionState();
+        if (!el.gameScreen.classList.contains('hidden')) render();
+      }
+
+      async function checkVKRewardAd() {
+        if (!vkBridgeReady || !vkBridge || typeof vkBridge.send !== 'function') return false;
+        try {
+          const response = await withTimeout(
+            vkBridge.send('VKWebAppCheckNativeAds', { ad_format: 'reward' }),
+            AD_CHECK_TIMEOUT,
+            'VKWebAppCheckNativeAds(reward)'
+          );
+          return Boolean(response && response.result === true);
+        } catch (error) {
+          console.warn('VK rewarded availability check failed:', error);
+          return false;
+        }
+      }
+
+      async function checkVKInterstitialAd() {
+        if (!vkBridgeReady || !vkBridge || typeof vkBridge.send !== 'function') return false;
+        try {
+          const response = await withTimeout(
+            vkBridge.send('VKWebAppCheckNativeAds', { ad_format: 'interstitial' }),
+            AD_CHECK_TIMEOUT,
+            'VKWebAppCheckNativeAds(interstitial)'
+          );
+          return Boolean(response && response.result === true);
+        } catch (error) {
+          console.warn('VK interstitial availability check failed:', error);
+          return false;
+        }
+      }
+
+      async function showRewardedBottleAdOnClick() {
+        if (locked || extraBottleActive || isInteractionBlocked()) return;
+        if (!vkBridgeReady) {
+          showToast('Реклама сейчас недоступна');
+          return;
+        }
+
+        setAdBusy(true);
+        let audioPausedForAd = false;
+        try {
+          const available = await checkVKRewardAd();
+          if (lifecyclePaused || document.hidden) return;
+          if (!available) {
+            showToast('Реклама сейчас недоступна');
+            return;
+          }
+
+          persistLocalProgress();
+          pauseAudio('ad');
+          audioPausedForAd = true;
+          const response = await withTimeout(
+            vkBridge.send('VKWebAppShowNativeAds', { ad_format: 'reward' }),
+            AD_SHOW_TIMEOUT,
+            'VK rewarded ad'
+          );
+
+          if (response && response.result === true) {
+            grantRewardExtraBottle();
+          } else {
+            showToast('Реклама не досмотрена — награда не выдана');
+          }
+        } catch (error) {
+          console.warn('VK rewarded ad failed:', error);
+          showToast('Реклама сейчас недоступна');
+        } finally {
+          if (audioPausedForAd) resumeAudio('ad');
+          setAdBusy(false);
+        }
+      }
+
+      function recordInterstitialAttempt() {
+        levelsSinceInterstitial = 0;
+        lastInterstitialAt = Date.now();
+        writeSessionNumber('colorSortLevelsSinceInterstitial', 0);
+        writeSessionNumber('colorSortLastInterstitialAt', lastInterstitialAt);
+      }
+
+      async function showInterstitialThen(next) {
+        if (isInteractionBlocked()) return;
+        if (!vkBridgeReady) {
+          next();
+          return;
+        }
+
+        setAdBusy(true);
+        let audioPausedForAd = false;
+        try {
+          const available = await checkVKInterstitialAd();
+          if (lifecyclePaused || document.hidden || !available) return;
+
+          recordInterstitialAttempt();
+          pauseAudio('ad');
+          audioPausedForAd = true;
+          await withTimeout(
+            vkBridge.send('VKWebAppShowNativeAds', { ad_format: 'interstitial' }),
+            AD_SHOW_TIMEOUT,
+            'VK interstitial ad'
+          );
+        } catch (error) {
+          console.warn('VK interstitial ad failed:', error);
+        } finally {
+          if (audioPausedForAd) resumeAudio('ad');
+          setAdBusy(false);
+          next();
+        }
+      }
+
+      function stopWinEffects() {
+        if (winFxRaf) cancelAnimationFrame(winFxRaf);
+        winFxRaf = 0;
+        if (winFxCanvas) winFxCanvas.remove();
+        winFxCanvas = null;
+      }
+
+      function launchWinEffects() {
+        stopWinEffects();
+        if (prefersReducedMotion()) return;
+        const canvas = document.createElement('canvas');
+        canvas.className = 'win-fx-canvas';
+        const rect = document.getElementById('app').getBoundingClientRect();
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        canvas.width = Math.round(rect.width * dpr);
+        canvas.height = Math.round(rect.height * dpr);
+        document.getElementById('app').appendChild(canvas);
+        winFxCanvas = canvas;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+        const colors = ['#ffd15c','#ff6f7f','#6ca8ff','#55d98b','#b57cff','#43d7d1','#ffffff'];
+        const particles = Array.from({ length: 82 }, (_, i) => ({
+          x: rect.width * (.25 + Math.random() * .5),
+          y: rect.height * .42,
+          vx: (Math.random() - .5) * 8.5,
+          vy: -3.5 - Math.random() * 7.5,
+          g: .13 + Math.random() * .08,
+          r: 3 + Math.random() * 5,
+          rot: Math.random() * Math.PI,
+          vr: (Math.random() - .5) * .22,
+          color: colors[i % colors.length],
+          coin: i % 8 === 0
+        }));
+        const started = performance.now();
+        function frame(now) {
+          const age = now - started;
+          ctx.clearRect(0, 0, rect.width, rect.height);
+          for (const p of particles) {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += p.g;
+            p.vx *= .995;
+            p.rot += p.vr;
+            const alpha = Math.max(0, 1 - Math.max(0, age - 1250) / 700);
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            if (p.coin) {
+              ctx.fillStyle = '#ffd15c';
+              ctx.beginPath();
+              ctx.arc(0, 0, p.r + 2, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.fillStyle = 'rgba(95,64,0,.65)';
+              ctx.font = `bold ${Math.max(8, p.r + 4)}px sans-serif`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText('•', 0, -1);
+            } else {
+              ctx.fillStyle = p.color;
+              ctx.fillRect(-p.r, -p.r * .45, p.r * 2, p.r * .9);
+            }
+            ctx.restore();
+          }
+          if (age < 1950) winFxRaf = requestAnimationFrame(frame);
+          else stopWinEffects();
+        }
+        winFxRaf = requestAnimationFrame(frame);
+      }
+
+      function showWin() {
+        locked = true;
+        const bestKey = `colorSortBest_${currentLevel}`;
+        const oldBest = Number(safeStorageGet(bestKey) || 0);
+        const isNewRecord = !oldBest || moves < oldBest;
+        const bestResult = isNewRecord ? moves : oldBest;
+        if (isNewRecord) safeStorageSet(bestKey, String(moves));
+
+        const firstCompletion = !completedLevels.has(currentLevel);
+        if (firstCompletion) {
+          completedLevels.add(currentLevel);
+          coins += LEVEL_REWARD;
+        }
+
+        const highestUnlocked = getUnlockedIndex();
+        safeStorageSet('colorSortUnlocked', String(Math.max(highestUnlocked, Math.min(currentLevel + 1, LEVELS.length - 1))));
+        persistLocalProgress();
+        updateMenuProgress();
+
+        el.winText.textContent = 'Все цвета аккуратно рассортированы.';
+        el.winMoves.textContent = String(moves);
+        el.winBest.textContent = String(bestResult);
+        el.winRecord.classList.toggle('hidden', !isNewRecord);
+        el.winRecord.textContent = oldBest ? 'Новый рекорд!' : 'Первый рекорд!';
+        el.winReward.classList.toggle('hidden', !firstCompletion);
+        if (firstCompletion) { setCoinDisplay(el.winReward, LEVEL_REWARD, '+'); el.winReward.appendChild(document.createTextNode(' за первое прохождение')); }
+        el.nextBtn.textContent = currentLevel === LEVELS.length - 1 ? 'Сначала' : 'Следующий уровень';
+        el.winModal.classList.remove('hidden');
+        el.gameScreen.setAttribute('inert', '');
+        el.winCard.classList.remove('win-pop');
+        void el.winCard.offsetWidth;
+        el.winCard.classList.add('win-pop');
+        launchWinEffects();
+        playWinSound();
+        requestAnimationFrame(() => el.nextBtn.focus({ preventScroll: true }));
+      }
+
+      function replayLevel() {
+        if (isInteractionBlocked() || el.winModal.classList.contains('hidden')) return;
+        locked = false;
+        stopWinEffects();
+        initLevel(currentLevel);
+      }
+
+      function nextLevel() {
+        const next = currentLevel === LEVELS.length - 1 ? 0 : currentLevel + 1;
+        locked = false;
+        extraBottleActive = false;
+        initLevel(next);
+      }
+
+      function nextLevelWithAd() {
+        if (isInteractionBlocked() || el.winModal.classList.contains('hidden')) return;
+        levelsSinceInterstitial += 1;
+        writeSessionNumber('colorSortLevelsSinceInterstitial', levelsSinceInterstitial);
+
+        const enoughTime = Date.now() - lastInterstitialAt >= INTERSTITIAL_MIN_INTERVAL;
+        if (!vkBridgeReady || levelsSinceInterstitial < 2 || !enoughTime) {
+          nextLevel();
+          return;
+        }
+
+        void showInterstitialThen(nextLevel);
+      }
+
+      function syncAudioButtons() {
+        const soundButtons = [el.soundBtn, el.menuSoundBtn].filter(Boolean);
+        soundButtons.forEach(button => {
+          setIconButton(button, sfxOn ? 'sound' : 'muted');
+          const label = sfxOn ? 'Выключить звуки' : 'Включить звуки';
+          button.title = label;
+          button.setAttribute('aria-label', label);
+          button.setAttribute('aria-pressed', String(sfxOn));
+          button.classList.toggle('off', !sfxOn);
+        });
+        const musicButtons = [el.musicBtn, el.menuMusicBtn].filter(Boolean);
+        musicButtons.forEach(button => {
+          setIconButton(button, musicOn ? 'music' : 'music-off');
+          const label = musicOn ? 'Выключить музыку' : 'Включить музыку';
+          button.title = label;
+          button.setAttribute('aria-label', label);
+          button.setAttribute('aria-pressed', String(musicOn));
+          button.classList.toggle('off', !musicOn);
+        });
+      }
+
+      function toggleSound() {
+        sfxOn = !sfxOn;
+        persistLocalProgress();
+        if (sfxOn) playTone(520, .06, .03);
+        syncAudioButtons();
+        if (!el.gameScreen.classList.contains('hidden')) render();
+      }
+
+      function toggleMusic() {
+        musicOn = !musicOn;
+        persistLocalProgress();
+        if (musicOn) startBackgroundMusic();
+        else stopBackgroundMusic();
+        syncAudioButtons();
+        if (!el.gameScreen.classList.contains('hidden')) render();
+      }
+
+      function getAudioContext(force = false) {
+        if (systemAudioPaused) return null;
+        if (!force && !sfxOn && !musicOn) return null;
+        if (!audioCtx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (!AudioCtx) return null;
+          audioCtx = new AudioCtx();
+          audioMaster = audioCtx.createGain();
+          audioMaster.gain.value = 1;
+          audioMaster.connect(audioCtx.destination);
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+        return audioCtx;
+      }
+
+      function midiToFreq(midi) {
+        return 440 * Math.pow(2, (midi - 69) / 12);
+      }
+
+      function createReverbImpulse(ctx, seconds = 1.85, decay = 2.7) {
+        const length = Math.floor(ctx.sampleRate * seconds);
+        const impulse = ctx.createBuffer(2, length, ctx.sampleRate);
+        for (let channel = 0; channel < impulse.numberOfChannels; channel++) {
+          const data = impulse.getChannelData(channel);
+          for (let i = 0; i < length; i++) {
+            const envelope = Math.pow(1 - i / length, decay);
+            data[i] = (Math.random() * 2 - 1) * envelope;
+          }
+        }
+        return impulse;
+      }
+
+      function ensureMusicGraph(ctx) {
+        if (musicBus && musicBus.context === ctx) return;
+
+        musicBus = ctx.createGain();
+        musicBus.gain.value = 0.0001;
+
+        const dry = ctx.createGain();
+        dry.gain.value = .70;
+        const wet = ctx.createGain();
+        wet.gain.value = .32;
+
+        musicReverb = ctx.createConvolver();
+        musicReverb.buffer = createReverbImpulse(ctx, 2.35, 3.15);
+
+        musicBus.connect(dry);
+        musicBus.connect(musicReverb);
+        musicReverb.connect(wet);
+        dry.connect(audioMaster);
+        wet.connect(audioMaster);
+
+        // Более воздушный тембр деревянной флейты / свирели.
+        fluteWave = ctx.createPeriodicWave(
+          new Float32Array([0, 0, 0, 0, 0, 0]),
+          new Float32Array([0, 1, .22, .075, .026, .009]),
+          { disableNormalization: false }
+        );
+      }
+
+      function scheduleFluteNote(ctx, midi, start, duration, velocity = 1) {
+        if (midi == null) return;
+
+        const frequency = midiToFreq(midi);
+        const osc = ctx.createOscillator();
+        const breath = ctx.createOscillator();
+        const breathGain = ctx.createGain();
+        const gain = ctx.createGain();
+        const tone = ctx.createBiquadFilter();
+        const vibrato = ctx.createOscillator();
+        const vibratoDepth = ctx.createGain();
+
+        osc.setPeriodicWave(fluteWave);
+        osc.frequency.setValueAtTime(frequency, start);
+
+        // Едва заметный верхний призвук создаёт ощущение деревянной свирели.
+        breath.type = 'sine';
+        breath.frequency.setValueAtTime(frequency * 2.01, start);
+        breathGain.gain.setValueAtTime(.0001, start);
+        breathGain.gain.exponentialRampToValueAtTime(.0038 * velocity, start + .06);
+        breathGain.gain.exponentialRampToValueAtTime(.0001, start + duration);
+
+        tone.type = 'lowpass';
+        tone.frequency.setValueAtTime(Math.min(4600, frequency * 7.2), start);
+        tone.Q.value = .45;
+
+        vibrato.type = 'sine';
+        vibrato.frequency.setValueAtTime(4.7, start);
+        vibratoDepth.gain.setValueAtTime(0, start);
+        vibratoDepth.gain.linearRampToValueAtTime(Math.max(1.15, frequency * .0046), start + .32);
+        vibrato.connect(vibratoDepth);
+        vibratoDepth.connect(osc.frequency);
+
+        const attack = Math.min(.11, duration * .2);
+        const release = Math.min(.25, duration * .32);
+        const peak = .032 * velocity;
+        gain.gain.setValueAtTime(.0001, start);
+        gain.gain.exponentialRampToValueAtTime(peak, start + attack);
+        gain.gain.setValueAtTime(peak * .86, Math.max(start + attack, start + duration - release));
+        gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
+
+        osc.connect(tone);
+        tone.connect(gain);
+        gain.connect(musicBus);
+        breath.connect(breathGain);
+        breathGain.connect(musicBus);
+
+        registerAudioSource(osc);
+        registerAudioSource(breath);
+        registerAudioSource(vibrato);
+        osc.start(start);
+        breath.start(start);
+        vibrato.start(start);
+        osc.stop(start + duration + .05);
+        breath.stop(start + duration + .05);
+        vibrato.stop(start + duration + .05);
+      }
+
+      function schedulePluck(ctx, midi, start, velocity = 1) {
+        const freq = midiToFreq(midi);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const tone = ctx.createBiquadFilter();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, start);
+        tone.type = 'lowpass';
+        tone.frequency.setValueAtTime(1900, start);
+        tone.frequency.exponentialRampToValueAtTime(650, start + 1.15);
+        const peak = .0105 * velocity;
+        gain.gain.setValueAtTime(.0001, start);
+        gain.gain.exponentialRampToValueAtTime(peak, start + .018);
+        gain.gain.exponentialRampToValueAtTime(.0001, start + 1.35);
+
+        osc.connect(tone);
+        tone.connect(gain);
+        gain.connect(musicBus);
+        registerAudioSource(osc);
+        osc.start(start);
+        osc.stop(start + 1.4);
+      }
+
+      function schedulePastoralChord(ctx, notes, start) {
+        if (!notes) return;
+        notes.forEach((midi, i) => schedulePluck(ctx, midi, start + i * .055, i === 0 ? 1 : .8));
+        // Тихая квинта внизу удерживает спокойную «земляную» основу.
+        schedulePluck(ctx, notes[0] - 12, start + .03, .58);
+      }
+
+      function scheduleMusicAhead() {
+        if (!musicOn || !musicTimer || !audioCtx) return;
+        const horizon = audioCtx.currentTime + .85;
+
+        while (musicNextNoteTime < horizon) {
+          const [midi, beats, chord] = PASTORAL_MELODY[musicStep];
+          const fullDuration = beats * MUSIC_BEAT;
+          const soundingDuration = Math.max(.18, fullDuration * .93);
+          const phraseAccent = chord ? 1.06 : 1;
+
+          if (chord) schedulePastoralChord(audioCtx, chord, musicNextNoteTime);
+          scheduleFluteNote(audioCtx, midi, musicNextNoteTime, soundingDuration, phraseAccent);
+
+          musicNextNoteTime += fullDuration;
+          musicStep = (musicStep + 1) % PASTORAL_MELODY.length;
+        }
+      }
+
+      function startBackgroundMusic() {
+        if (!musicOn || document.hidden || systemAudioPaused) return;
+        const ctx = getAudioContext(true);
+        if (!ctx) return;
+        ensureMusicGraph(ctx);
+
+        const now = ctx.currentTime;
+        musicBus.gain.cancelScheduledValues(now);
+        musicBus.gain.setValueAtTime(Math.max(.0001, musicBus.gain.value), now);
+        musicBus.gain.exponentialRampToValueAtTime(.58, now + 1.1);
+
+        if (musicTimer) return;
+        musicStep = 0;
+        musicNextNoteTime = now + .12;
+        musicTimer = setInterval(scheduleMusicAhead, 120);
+        scheduleMusicAhead();
+      }
+
+      function stopBackgroundMusic() {
+        if (musicTimer) {
+          clearInterval(musicTimer);
+          musicTimer = null;
+        }
+        musicStep = 0;
+        if (!audioCtx || !musicBus) return;
+        const now = audioCtx.currentTime;
+        musicBus.gain.cancelScheduledValues(now);
+        musicBus.gain.setValueAtTime(Math.max(.0001, musicBus.gain.value), now);
+        musicBus.gain.exponentialRampToValueAtTime(.0001, now + .35);
+      }
+
+      function playTone(freq, duration = .06, gain = .03, delay = 0) {
+        if (!sfxOn) return;
+        const ctx = getAudioContext(true);
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const amp = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        amp.gain.setValueAtTime(0.0001, ctx.currentTime + delay);
+        amp.gain.exponentialRampToValueAtTime(gain, ctx.currentTime + delay + .01);
+        amp.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + delay + duration);
+        osc.connect(amp);
+        amp.connect(audioMaster);
+        registerAudioSource(osc);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + duration + .02);
+      }
+
+      function playWinSound() {
+        if (!sfxOn) return;
+        playTone(523.25, .13, .035, 0);
+        playTone(659.25, .13, .035, .12);
+        playTone(783.99, .18, .04, .24);
+      }
+
+      function showToast(text) {
+        clearTimeout(toastTimer);
+        el.toast.textContent = text;
+        el.toast.classList.add('show');
+        toastTimer = setTimeout(() => el.toast.classList.remove('show'), 1200);
+      }
+
+      el.playBtn.addEventListener('click', continueGame);
+      el.levelsBtn.addEventListener('click', showLevelSelect);
+      el.shopBtn.addEventListener('click', showShop);
+      el.menuSoundBtn.addEventListener('click', toggleSound);
+      el.menuMusicBtn.addEventListener('click', toggleMusic);
+      el.levelsBackBtn.addEventListener('click', showMenu);
+      el.shopBackBtn.addEventListener('click', showMenu);
+      el.menuBtn.addEventListener('click', showMenu);
+      el.soundBtn.addEventListener('click', toggleSound);
+      el.musicBtn.addEventListener('click', toggleMusic);
+      el.hintBtn.addEventListener('click', useHint);
+      el.extraBottleBtn.addEventListener('click', showRewardedBottleAdOnClick);
+      el.undoBtn.addEventListener('click', undo);
+      el.restartBtn.addEventListener('click', restart);
+      el.replayBtn.addEventListener('click', replayLevel);
+      el.nextBtn.addEventListener('click', nextLevelWithAd);
+
+      window.addEventListener('keydown', (event) => {
+        if (el.gameScreen.classList.contains('hidden') || isInteractionBlocked()) return;
+        if (!el.winModal.classList.contains('hidden')) return;
+
+        if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'z') {
+          event.preventDefault();
+          undo();
+          return;
+        }
+
+        if (event.key === 'Escape') {
+          if (selected !== null) {
+            event.preventDefault();
+            selected = null;
+            render();
+          }
+          return;
+        }
+
+        const activeBottle = document.activeElement?.classList?.contains('bottle-slot');
+        if (activeBottle) {
+          const directions = {
+            ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down'
+          };
+          if (directions[event.key]) {
+            event.preventDefault();
+            focusBottleSpatial(directions[event.key]);
+            return;
+          }
+          if (event.key === 'Home') {
+            event.preventDefault();
+            focusBottle(0);
+            return;
+          }
+          if (event.key === 'End') {
+            event.preventDefault();
+            focusBottle(bottles.length - 1);
+            return;
+          }
+        }
+
+        if (!event.ctrlKey && !event.metaKey && !event.altKey && /^[1-9]$/.test(event.key)) {
+          const index = Number(event.key) - 1;
+          if (index < bottles.length) {
+            event.preventDefault();
+            focusBottle(index);
+          }
+        }
+      });
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) pauseLifecycle('visibility');
+        else resumeLifecycle('visibility');
+      });
+
+      window.addEventListener('blur', () => {
+        pauseLifecycle('blur');
+      });
+
+      window.addEventListener('focus', () => {
+        if (document.hidden) return;
+        resumeLifecycle('blur');
+      });
+
+      window.addEventListener('pagehide', () => {
+        pauseLifecycle('page');
+      });
+
+      window.addEventListener('pageshow', () => {
+        if (document.hidden) return;
+        resumeLifecycle('page');
+      });
+
+      // Блокируем системное контекстное меню и drag внутри игровой области.
+      el.app.addEventListener('contextmenu', event => event.preventDefault());
+      el.app.addEventListener('dragstart', event => event.preventDefault());
+
+      applyCosmetics();
+      syncAudioButtons();
+      updateMenuProgress();
+      void initializePersistence();
+    })();
+  </script>
+</body>
+</html>
