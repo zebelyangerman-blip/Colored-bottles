@@ -1,0 +1,46 @@
+ATLAS OF LIGHT / SPECTRAL REFORGED - provenance notice
+
+Project base: user-supplied archive Colored-bottles-main (1).zip.
+The existing background artwork, laboratory images, coin art, original SVG icon
+sprite, original application portions and procedural audio were provided by the
+user. Their third-party ownership/license history was not independently verified.
+This notice does not grant new rights in those supplied materials.
+
+New spectral rules, fixed campaign data, SVG instrument/constellation artwork,
+CSS redesign and integration changes were authored for this requested project.
+No artwork was copied from a competing game. No external visual library, music
+recording or font binary is included. Text uses the device's system font stack.
+
+External runtime service (not bundled): @vkontakte/vk-bridge 2.15.11.
+Upstream: https://github.com/VKCOM/vk-bridge
+License reported by upstream: MIT; Copyright (c) 2017-present VK LLC.
+Loader: https://unpkg.com/@vkontakte/vk-bridge@2.15.11/dist/browser.min.js
+The app remains playable without the SDK; no ad reward is granted without a
+successful SDK result. Live VK SDK/CDN behavior must be checked in VK preview.
+
+Development/QA tools (not bundled in the game):
+- microsoft/playwright, installed Python package 1.57.0, Apache-2.0.
+- acornjs/acorn 8.15.0, MIT, AST-based patching of the supplied application.
+- Python 3.13, Node.js 22.16.0 and native browser DOM/CSS/SVG/Web Audio APIs.
+- User-supplied BACKEND VISUAL TOOLBOX V4 FINAL and VACANT INSPECTOR V26.
+  Their authoring files are not included in this production archive.
+
+R13 continuation (2026-10-06):
+Baseline: ATLAS_OF_LIGHT_SPECTRAL_REFORGED_FINAL(1).zip, SHA-256
+d6e2c2eeaa195ecfdda52eae5c7d21fae944c1e5adecee465f258bd5ef69f8e5.
+The exact archive hash is also recorded in the separate R13 report; that report
+and asset manifest take precedence over descriptive ancestry labels above.
+New R13 work: branching goals, recuration of selected puzzles, SVG vessel
+housings, responsive presentation, observatory scene compositions, and QA.
+The raster scenes are composites of the supplied paintings/props and newly
+authored geometric decoration. The menu artwork was recovered from this
+project's prior R13 files. Underlying supplied-art rights remain unverified.
+No external image, audio recording, or font was downloaded for R13.
+
+Additional R13 build/test tools (not runtime dependencies):
+- lovell/sharp 0.34.1, Apache-2.0: https://github.com/lovell/sharp
+- Pillow 12.3.0, MIT-CMU: https://github.com/python-pillow/Pillow
+- Native DOM/SVG/CSS/Web Animations/Web Audio, no additional rendering engine.
+SVGO, Pixelmatch and Lighthouse are not bundled and were not executed;
+Pillow controlled pixel comparisons and browser/CDP diagnostics are
+separately reported without being presented as those tools' results.
